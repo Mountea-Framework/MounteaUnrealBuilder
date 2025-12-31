@@ -99,6 +99,10 @@ body {
 .sidebar-header {
   padding: 1.5rem 1.25rem;
   border-bottom: 1px solid var(--border);
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .sidebar-header h1 {
@@ -118,6 +122,7 @@ body {
   list-style: none;
   padding: 1rem 0.75rem;
   flex: 1;
+  overflow-y: auto;
 }
 
 .nav-menu li {
@@ -151,9 +156,15 @@ body {
 }
 
 .nav-menu-bottom {
-  margin-top: auto;
   border-top: 1px solid var(--border);
-  padding-top: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.nav-menu-bottom .nav-menu {
+  padding: 0;
+  flex: none;
 }
 
 .content {
@@ -178,6 +189,7 @@ body {
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
+  height: 70px;
 }
 
 .page-header h2 {
@@ -587,6 +599,7 @@ body {
 .checkbox-label {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
   background: var(--bg-tertiary);
@@ -595,6 +608,7 @@ body {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  position: relative;
 }
 
 .checkbox-label:hover {
@@ -603,11 +617,22 @@ body {
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  accent-color: var(--primary);
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox-label:has(input[type="checkbox"]:checked) {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.checkbox-label:has(input[type="checkbox"]:checked):hover {
+  background: rgba(19, 91, 236, 0.15);
+  border-color: var(--primary);
 }
 
 .checkbox-label span {

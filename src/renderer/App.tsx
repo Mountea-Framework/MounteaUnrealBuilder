@@ -114,15 +114,17 @@ const App: React.FC = () => {
           </li>
         </ul>
         
-        <ul className="nav-menu nav-menu-bottom">
-          <li
-            className={currentPage === 'settings' ? 'active' : ''}
-            onClick={() => setCurrentPage('settings')}
-          >
-            <span className="material-symbols-outlined icon">settings</span>
-            Settings
-          </li>
-        </ul>
+        <div className="nav-menu-bottom">
+          <ul className="nav-menu">
+            <li
+              className={currentPage === 'settings' ? 'active' : ''}
+              onClick={() => setCurrentPage('settings')}
+            >
+              <span className="material-symbols-outlined icon">settings</span>
+              Settings
+            </li>
+          </ul>
+        </div>
       </nav>
 
       <main className="content">
