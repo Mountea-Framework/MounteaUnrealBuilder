@@ -13,6 +13,16 @@ const buildExecutor = new BuildExecutor(
     if (mainWindow) {
       mainWindow.webContents.send('build-log', buildId, log);
     }
+    
+    loadConfig().then(config => {
+      const build = config.buildHistory.find(b => b.id === buildId);
+      if (build) {
+        build.log += log;
+        saveConfigInternal(config).catch(err => 
+          console.error('Failed to save log:', err)
+        );
+      }
+    }).catch(err => console.error('Failed to update log:', err));
   },
   async (buildId, success) => {
     if (mainWindow) {

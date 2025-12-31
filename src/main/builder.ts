@@ -44,7 +44,7 @@ export class BuildExecutor {
     this.onLog(buildId, `Output: ${project.outputPath}\n`);
     this.onLog(buildId, `\n${'='.repeat(80)}\n\n`);
 
-    this.currentProcess = spawn(runatPath, args, {
+    this.currentProcess = spawn(`"${runatPath}"`, args, {
       shell: true,
       cwd: engine.path,
       env: {

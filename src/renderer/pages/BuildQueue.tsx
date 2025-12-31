@@ -11,6 +11,16 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const logsFromConfig: Record<string, string> = {};
+    config.buildHistory.forEach(build => {
+      if (build.log) {
+        logsFromConfig[build.id] = build.log;
+      }
+    });
+    setBuildLogs(logsFromConfig);
+  }, [config]);
+
+  useEffect(() => {
     const handleBuildLog = (buildId: string, log: string) => {
       setBuildLogs(prev => ({
         ...prev,
@@ -103,13 +113,13 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
             </button>
           </div>
 
-          {buildLogs[activeBuild.id] && (
+          {activeBuild && (
             <div className="build-log-container">
               <div className="build-log-header">
                 <span>Build Log</span>
               </div>
               <pre className="build-log">
-                {buildLogs[activeBuild.id]}
+                {buildLogs[activeBuild.id] || 'Initializing build...\n'}
                 <div ref={logEndRef} />
               </pre>
             </div>
@@ -153,10 +163,10 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
                 <span className="expand-icon">{expandedBuild === build.id ? '▼' : '▶'}</span>
               </div>
 
-              {expandedBuild === build.id && buildLogs[build.id] && (
+              {expandedBuild === build.id && (
                 <div className="build-log-container">
                   <pre className="build-log">
-                    {buildLogs[build.id]}
+                    {buildLogs[build.id] || 'No logs available. Build may have failed before generating output.'}
                   </pre>
                 </div>
               )}
