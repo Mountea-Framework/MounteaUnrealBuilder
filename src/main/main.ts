@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Notification } from 'electron';
+import { app, BrowserWindow, Menu , ipcMain, dialog, Notification } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as crypto from 'crypto';
@@ -244,6 +244,7 @@ const createWindow = () => {
     },
     backgroundColor: '#1a1a1a',
     show: false,
+    autoHideMenuBar: true,
   });
 
   mainWindow.once('ready-to-show', () => {
@@ -262,6 +263,7 @@ const createWindow = () => {
 };
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   console.log('Config path:', CONFIG_PATH);
   createWindow();
 });
