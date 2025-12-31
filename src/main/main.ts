@@ -7,22 +7,15 @@ import { BuildExecutor } from './builder';
 
 let mainWindow: BrowserWindow | null = null;
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
+const buildLogs = new Map<string, string>();
 
 const buildExecutor = new BuildExecutor(
   (buildId, log) => {
+    buildLogs.set(buildId, (buildLogs.get(buildId) || '') + log);
+    
     if (mainWindow) {
       mainWindow.webContents.send('build-log', buildId, log);
     }
-    
-    loadConfig().then(config => {
-      const build = config.buildHistory.find(b => b.id === buildId);
-      if (build) {
-        build.log += log;
-        saveConfigInternal(config).catch(err => 
-          console.error('Failed to save log:', err)
-        );
-      }
-    }).catch(err => console.error('Failed to update log:', err));
   },
   async (buildId, success) => {
     if (mainWindow) {
@@ -35,9 +28,11 @@ const buildExecutor = new BuildExecutor(
       if (build) {
         build.status = success ? 'success' : 'failed';
         build.endTime = new Date().toISOString();
-        await saveConfigInternal(config);
+        build.log = buildLogs.get(buildId) || '';
       }
-
+      
+      await saveConfigInternal(config);
+      
       processNextBuild();
     } catch (error) {
       console.error('Failed to update build status:', error);
@@ -81,8 +76,25 @@ async function processNextBuild() {
 async function loadConfig(): Promise<AppConfig> {
   try {
     const data = await fs.readFile(CONFIG_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch {
+    const config = JSON.parse(data);
+    
+    if (!config.engines || !config.projects || !config.buildHistory) {
+      console.error('Invalid config structure, using defaults');
+      return {
+        engines: [],
+        projects: [],
+        buildHistory: [],
+      };
+    }
+    
+    return config;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      console.log('Config file not found, creating new one');
+    } else {
+      console.error('Failed to load config:', error);
+    }
+    
     return {
       engines: [],
       projects: [],
@@ -92,8 +104,23 @@ async function loadConfig(): Promise<AppConfig> {
 }
 
 async function saveConfigInternal(config: AppConfig): Promise<void> {
-  await fs.mkdir(path.dirname(CONFIG_PATH), { recursive: true });
-  await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
+  try {
+    await fs.mkdir(path.dirname(CONFIG_PATH), { recursive: true });
+    const configJson = JSON.stringify(config, null, 2);
+    
+    const tempPath = CONFIG_PATH + '.tmp';
+    await fs.writeFile(tempPath, configJson, 'utf-8');
+    
+    try {
+      await fs.rename(tempPath, CONFIG_PATH);
+    } catch (renameError) {
+      await fs.unlink(tempPath).catch(() => {});
+      throw renameError;
+    }
+  } catch (error) {
+    console.error('Failed to save config:', error);
+    throw error;
+  }
 }
 
 const createWindow = () => {
@@ -126,7 +153,10 @@ const createWindow = () => {
   });
 };
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  console.log('Config path:', CONFIG_PATH);
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

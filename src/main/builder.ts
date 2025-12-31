@@ -30,12 +30,14 @@ export class BuildExecutor {
       'RunUAT.bat'
     );
 
+    const outPath = `${project.outputPath}/${project.name}`;
+
     const args = [
       'BuildPlugin',
       '-Rocket',
       `-Plugin="${project.pluginPath}"`,
       `-TargetPlatforms=${project.targetPlatforms.join('+')}`,
-      `-Package="${project.outputPath}"`,
+      `-Package="${outPath}"`,
     ];
 
     this.onLog(buildId, `Starting build: ${project.name}\n`);

@@ -13,7 +13,7 @@ const App: React.FC = () => {
   useEffect(() => {
     loadConfig();
     
-    const interval = setInterval(loadConfig, 2000);
+    const interval = setInterval(loadConfig, 5000);
     
     return () => clearInterval(interval);
   }, []);
