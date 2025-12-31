@@ -25,11 +25,14 @@ const createWindow = () => {
     mainWindow?.show();
   });
 
+  if (process.env.DEV_SERVER === 'true') {
+     mainWindow.loadURL('http://localhost:3000');
+   } else {
+     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+   }
+  
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
-  } else {
-    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
   mainWindow.on('closed', () => {
