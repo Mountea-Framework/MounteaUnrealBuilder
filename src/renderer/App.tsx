@@ -95,21 +95,21 @@ const App: React.FC = () => {
             className={currentPage === 'dashboard' ? 'active' : ''}
             onClick={() => setCurrentPage('dashboard')}
           >
-            <span className="icon">📊</span>
+            <span className="material-symbols-outlined icon">folder_open</span>
             Dashboard
           </li>
           <li
             className={currentPage === 'engines' ? 'active' : ''}
             onClick={() => setCurrentPage('engines')}
           >
-            <span className="icon">⚙️</span>
+            <span className="material-symbols-outlined icon">extension</span>
             Engine Configuration
           </li>
           <li
             className={currentPage === 'queue' ? 'active' : ''}
             onClick={() => setCurrentPage('queue')}
           >
-            <span className="icon">📋</span>
+            <span className="material-symbols-outlined icon">build</span>
             Build Queue
           </li>
         </ul>
@@ -119,7 +119,7 @@ const App: React.FC = () => {
             className={currentPage === 'settings' ? 'active' : ''}
             onClick={() => setCurrentPage('settings')}
           >
-            <span className="icon">🔧</span>
+            <span className="material-symbols-outlined icon">settings</span>
             Settings
           </li>
         </ul>

@@ -45,134 +45,168 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
         <h2>Settings</h2>
       </header>
 
-      <div className="section">
-        <h3>General</h3>
-        
-        <div className="setting-item">
-          <div className="setting-info">
-            <h4>Desktop Notifications</h4>
-            <p>Show notifications when builds complete</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={showNotifications}
-              onChange={(e) => setShowNotifications(e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div className="setting-item">
-          <div className="setting-info">
-            <h4>Auto-open Build Queue</h4>
-            <p>Automatically switch to Build Queue when starting a build</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={autoOpenBuildQueue}
-              onChange={(e) => setAutoOpenBuildQueue(e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div className="setting-item">
-          <div className="setting-info">
-            <h4>Build History Limit</h4>
-            <p>Maximum number of completed builds to keep</p>
-          </div>
-          <select
-            className="select-input"
-            value={maxHistoryBuilds}
-            onChange={(e) => setMaxHistoryBuilds(Number(e.target.value))}
-          >
-            <option value={10}>10 builds</option>
-            <option value={20}>20 builds</option>
-            <option value={50}>50 builds</option>
-            <option value={100}>100 builds</option>
-            <option value={-1}>Unlimited</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="section">
-        <h3>Statistics</h3>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-value">{config.engines.length}</div>
-            <div className="stat-label">Engines Configured</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">{config.projects.length}</div>
-            <div className="stat-label">Projects</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">{config.buildHistory.length}</div>
-            <div className="stat-label">Total Builds</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">
-              {config.buildHistory.filter(b => b.status === 'success').length}
+      <div className="page-content">
+        <div className="section">
+          <h3>General</h3>
+          
+          <div className="setting-item">
+            <div className="setting-info">
+              <h4>Desktop Notifications</h4>
+              <p>Show notifications when builds complete</p>
             </div>
-            <div className="stat-label">Successful Builds</div>
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={showNotifications}
+                onChange={(e) => setShowNotifications(e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div className="setting-item">
+            <div className="setting-info">
+              <h4>Auto-open Build Queue</h4>
+              <p>Automatically switch to Build Queue when starting a build</p>
+            </div>
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={autoOpenBuildQueue}
+                onChange={(e) => setAutoOpenBuildQueue(e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div className="setting-item">
+            <div className="setting-info">
+              <h4>Build History Limit</h4>
+              <p>Maximum number of completed builds to keep</p>
+            </div>
+            <select
+              className="select-input"
+              value={maxHistoryBuilds}
+              onChange={(e) => setMaxHistoryBuilds(Number(e.target.value))}
+              style={{ width: '150px' }}
+            >
+              <option value={10}>10 builds</option>
+              <option value={20}>20 builds</option>
+              <option value={50}>50 builds</option>
+              <option value={100}>100 builds</option>
+              <option value={-1}>Unlimited</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      <div className="section">
-        <h3>Data Management</h3>
-        
-        <div className="button-group">
-          <button className="btn btn-secondary" onClick={handleExportConfig}>
-            Export Configuration
-          </button>
-          <button className="btn btn-danger" onClick={handleClearAllData}>
-            Clear All Data
-          </button>
+        <div className="section">
+          <h3>Statistics</h3>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-value">{config.engines.length}</div>
+              <div className="stat-label">Engines Configured</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{config.projects.length}</div>
+              <div className="stat-label">Projects</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{config.buildHistory.length}</div>
+              <div className="stat-label">Total Builds</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">
+                {config.buildHistory.filter(b => b.status === 'success').length}
+              </div>
+              <div className="stat-label">Successful Builds</div>
+            </div>
+          </div>
         </div>
 
-        <p className="help-text">
-          Configuration is stored at: <code>{navigator.userAgent.includes('Windows') ? '%APPDATA%' : '~'}/.unreal-builder/config.json</code>
-        </p>
-      </div>
+        <div className="section">
+          <h3>Data Management</h3>
+          
+          <div className="button-group">
+            <button className="btn btn-secondary" onClick={handleExportConfig}>
+              <span className="material-symbols-outlined">download</span>
+              Export Configuration
+            </button>
+            <button className="btn btn-danger" onClick={handleClearAllData}>
+              <span className="material-symbols-outlined">delete_forever</span>
+              Clear All Data
+            </button>
+          </div>
 
-      <div className="section">
-        <h3>Keyboard Shortcuts</h3>
-        <div className="shortcuts-list">
-          <div className="shortcut-item">
-            <kbd>Ctrl+1</kbd>
-            <span>Go to Dashboard</span>
-          </div>
-          <div className="shortcut-item">
-            <kbd>Ctrl+2</kbd>
-            <span>Go to Engine Configuration</span>
-          </div>
-          <div className="shortcut-item">
-            <kbd>Ctrl+3</kbd>
-            <span>Go to Build Queue</span>
-          </div>
-          <div className="shortcut-item">
-            <kbd>Ctrl+,</kbd>
-            <span>Open Settings</span>
-          </div>
-          <div className="shortcut-item">
-            <kbd>Ctrl+B</kbd>
-            <span>Build first project (from Dashboard)</span>
-          </div>
-          <div className="shortcut-item">
-            <kbd>Ctrl+Shift+X</kbd>
-            <span>Cancel current build</span>
+          <p className="help-text">
+            Configuration is stored at: <code>{navigator.userAgent.includes('Windows') ? '%APPDATA%' : '~'}/.unreal-builder/config.json</code>
+          </p>
+        </div>
+
+        <div className="section">
+          <h3>Keyboard Shortcuts</h3>
+          <div className="shortcuts-list">
+            <div className="shortcut-item">
+              <kbd>Ctrl+1</kbd>
+              <span>Go to Dashboard</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>Ctrl+2</kbd>
+              <span>Go to Engine Configuration</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>Ctrl+3</kbd>
+              <span>Go to Build Queue</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>Ctrl+,</kbd>
+              <span>Open Settings</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>Ctrl+B</kbd>
+              <span>Build first project (from Dashboard)</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>Ctrl+Shift+X</kbd>
+              <span>Cancel current build</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="section">
-        <h3>About</h3>
-        <p>Unreal Builder v1.0.0</p>
-        <p>A desktop application for building Unreal Engine plugins across multiple engine versions and platforms.</p>
-        <p className="help-text">Built with Electron, React, and TypeScript</p>
+        <div className="section">
+          <h3>About</h3>
+          <div style={{ 
+            padding: '1.5rem', 
+            background: 'var(--bg-secondary)', 
+            border: '1px solid var(--border)', 
+            borderRadius: 'var(--radius-lg)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: 'var(--radius-lg)',
+                background: 'var(--primary-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '1.75rem', color: 'var(--primary)' }}>
+                  construction
+                </span>
+              </div>
+              <div>
+                <h4 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.25rem' }}>Unreal Builder</h4>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>v1.0.0</p>
+              </div>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.6', marginBottom: '0.75rem' }}>
+              A desktop application for building Unreal Engine plugins across multiple engine versions and platforms.
+            </p>
+            <p className="help-text" style={{ marginTop: '0' }}>
+              Built with Electron, React, and TypeScript
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

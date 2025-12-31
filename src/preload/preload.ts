@@ -19,6 +19,8 @@ const api: IPC = {
   },
   selectFile: (filters) => ipcRenderer.invoke('select-file', filters),
   selectFolder: () => ipcRenderer.invoke('select-folder'),
+  exportLogs: (buildId, log) => ipcRenderer.invoke('export-logs', buildId, log),
+  openFolder: (folderPath) => ipcRenderer.invoke('open-folder', folderPath),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);
