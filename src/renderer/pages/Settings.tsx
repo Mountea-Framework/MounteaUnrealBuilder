@@ -51,6 +51,7 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
         autoOpenBuildQueue: true,
         maxHistoryBuilds: 20,
       },
+      profiles: [],
     };
 
     await saveConfig(emptyConfig);
@@ -187,6 +188,10 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
             <div className="shortcut-item">
               <kbd>Ctrl+3</kbd>
               <span>Go to Build Queue</span>
+            </div>
+            <div className="shortcut-item">
+              <kbd>Ctrl+4</kbd>
+              <span>Go to Build Profiles</span>
             </div>
             <div className="shortcut-item">
               <kbd>Ctrl+,</kbd>

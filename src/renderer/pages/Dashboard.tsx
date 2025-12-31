@@ -17,12 +17,14 @@ const PLATFORMS = [
 const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectConfig | null>(null);
+  const [selectedProfiles, setSelectedProfiles] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
     pluginPath: '',
     engineId: '',
     targetPlatforms: ['Win64'],
     outputPath: '',
+    defaultProfileId: '',
   });
 
   const handleBuild = async (projectId: string) => {
@@ -31,6 +33,25 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
     } catch (error) {
       alert('Failed to start build: ' + (error as Error).message);
     }
+  };
+
+  const handleBuildWithProfile = async (projectId: string, profileId: string) => {
+    const profile = config.profiles.find(p => p.id === profileId);
+    const project = config.projects.find(p => p.id === projectId);
+    
+    if (!profile || !project) return;
+
+    const tempProject = {
+      ...project,
+      targetPlatforms: profile.platforms,
+    };
+
+    await saveConfig({
+      ...config,
+      projects: config.projects.map(p => p.id === projectId ? tempProject : p),
+    });
+
+    await handleBuild(projectId);
   };
 
   const handleOpenOutputFolder = async (outputPath: string) => {
@@ -45,6 +66,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
       engineId: config.engines[0]?.id || '',
       targetPlatforms: ['Win64'],
       outputPath: '',
+      defaultProfileId: '',
     });
     setShowProjectForm(true);
   };
@@ -57,6 +79,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
       engineId: project.engineId,
       targetPlatforms: project.targetPlatforms,
       outputPath: project.outputPath,
+      defaultProfileId: project.defaultProfileId || '',
     });
     setShowProjectForm(true);
   };
@@ -104,6 +127,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
       engineId: formData.engineId,
       targetPlatforms: formData.targetPlatforms,
       outputPath: formData.outputPath,
+      defaultProfileId: formData.defaultProfileId || undefined,
     };
 
     const updatedProjects = editingProject
@@ -202,6 +226,23 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                 </div>
 
                 <div className="project-actions">
+                  {config.profiles.length > 0 && (
+                    <div style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
+                      <select
+                        className="select-input"
+                        value={selectedProfiles[project.id] || project.defaultProfileId || ''}
+                        onChange={(e) => setSelectedProfiles({ ...selectedProfiles, [project.id]: e.target.value })}
+                        style={{ width: '100%' }}
+                      >
+                        <option value="">Custom Platforms</option>
+                        {config.profiles.map(profile => (
+                          <option key={profile.id} value={profile.id}>
+                            {profile.name} ({profile.platforms.join(', ')})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <button className="btn btn-secondary" onClick={() => startEditProject(project)}>
                     <span className="material-symbols-outlined">edit</span>
                     Edit
@@ -218,7 +259,17 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                     <span className="material-symbols-outlined">delete</span>
                     Delete
                   </button>
-                  <button className="btn btn-primary" onClick={() => handleBuild(project.id)}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      const profileId = selectedProfiles[project.id] || project.defaultProfileId;
+                      if (profileId) {
+                        handleBuildWithProfile(project.id, profileId);
+                      } else {
+                        handleBuild(project.id);
+                      }
+                    }}
+                  >
                     <span className="material-symbols-outlined">play_arrow</span>
                     Build
                   </button>
@@ -304,6 +355,27 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                   ))}
                 </div>
               </div>
+
+              {config.profiles.length > 0 && (
+                <div className="form-group">
+                  <label>Default Build Profile</label>
+                  <select
+                    className="select-input"
+                    value={formData.defaultProfileId}
+                    onChange={(e) => setFormData({ ...formData, defaultProfileId: e.target.value })}
+                  >
+                    <option value="">None (use custom platforms above)</option>
+                    {config.profiles.map(profile => (
+                      <option key={profile.id} value={profile.id}>
+                        {profile.name} - {profile.platforms.join(', ')}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="help-text">
+                    Set a default profile to quickly build with preset platforms
+                  </p>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Output Directory *</label>

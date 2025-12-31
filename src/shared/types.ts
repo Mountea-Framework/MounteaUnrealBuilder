@@ -13,6 +13,7 @@ export interface ProjectConfig {
   engineId: string;
   targetPlatforms: string[];
   outputPath: string;
+  defaultProfileId?: string;
 }
 
 export interface BuildRecord {
@@ -30,11 +31,19 @@ export interface UserSettings {
   maxHistoryBuilds: number;
 }
 
+export interface BuildProfile {
+  id: string;
+  name: string;
+  platforms: string[];
+  description?: string;
+}
+
 export interface AppConfig {
   engines: EngineInstallation[];
   projects: ProjectConfig[];
   buildHistory: BuildRecord[];
   settings: UserSettings;
+  profiles: BuildProfile[];
 }
 
 export interface IPC {

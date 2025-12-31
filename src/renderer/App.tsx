@@ -4,9 +4,10 @@ import Dashboard from './pages/Dashboard';
 import EngineConfig from './pages/EngineConfig';
 import BuildQueue from './pages/BuildQueue';
 import Settings from './pages/Settings';
+import Profiles from './pages/Profiles';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
-type Page = 'dashboard' | 'engines' | 'queue' | 'settings';
+type Page = 'dashboard' | 'engines' | 'queue' | 'profiles' | 'settings';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -30,6 +31,12 @@ const App: React.FC = () => {
       ctrlKey: true,
       action: () => setCurrentPage('queue'),
       description: 'Go to Build Queue',
+    },
+    {
+      key: '4',
+      ctrlKey: true,
+      action: () => setCurrentPage('profiles'),
+      description: 'Go to Build Profiles',
     },
     {
       key: ',',
@@ -120,6 +127,13 @@ const App: React.FC = () => {
             <span className="material-symbols-outlined icon">build</span>
             Build Queue
           </li>
+          <li
+            className={currentPage === 'profiles' ? 'active' : ''}
+            onClick={() => setCurrentPage('profiles')}
+          >
+            <span className="material-symbols-outlined icon">layers</span>
+            Build Profiles
+          </li>
         </ul>
         
         <div className="nav-menu-bottom">
@@ -144,6 +158,9 @@ const App: React.FC = () => {
         )}
         {currentPage === 'queue' && (
           <BuildQueue config={config} />
+        )}
+        {currentPage === 'profiles' && (
+          <Profiles config={config} saveConfig={saveConfig} />
         )}
         {currentPage === 'settings' && (
           <Settings config={config} saveConfig={saveConfig} />

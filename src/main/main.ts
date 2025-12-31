@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog, Notification } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import * as crypto from 'crypto';
 import { AppConfig, BuildRecord } from '../shared/types';
 import { scanEngines, validateEngine } from './scanner';
 import { BuildExecutor } from './builder';
@@ -99,6 +100,26 @@ async function loadConfig(): Promise<AppConfig> {
           autoOpenBuildQueue: true,
           maxHistoryBuilds: 20,
         },
+        profiles: [
+          {
+            id: crypto.randomUUID(),
+            name: 'Quick Test',
+            platforms: ['Win64'],
+            description: 'Fast build for Windows only',
+          },
+          {
+            id: crypto.randomUUID(),
+            name: 'Desktop',
+            platforms: ['Win64', 'Linux', 'Mac'],
+            description: 'All desktop platforms',
+          },
+          {
+            id: crypto.randomUUID(),
+            name: 'Full Release',
+            platforms: ['Win64', 'Linux', 'Mac', 'Android', 'IOS'],
+            description: 'All supported platforms',
+          },
+        ],
       };
     }
     
@@ -108,6 +129,29 @@ async function loadConfig(): Promise<AppConfig> {
         autoOpenBuildQueue: true,
         maxHistoryBuilds: 20,
       };
+    }
+    
+    if (!config.profiles) {
+      config.profiles = [
+        {
+          id: crypto.randomUUID(),
+          name: 'Quick Test',
+          platforms: ['Win64'],
+          description: 'Fast build for Windows only',
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Desktop',
+          platforms: ['Win64', 'Linux', 'Mac'],
+          description: 'All desktop platforms',
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Full Release',
+          platforms: ['Win64', 'Linux', 'Mac', 'Android', 'IOS'],
+          description: 'All supported platforms',
+        },
+      ];
     }
     
     return config;
@@ -127,6 +171,26 @@ async function loadConfig(): Promise<AppConfig> {
         autoOpenBuildQueue: true,
         maxHistoryBuilds: 20,
       },
+      profiles: [
+        {
+          id: crypto.randomUUID(),
+          name: 'Quick Test',
+          platforms: ['Win64'],
+          description: 'Fast build for Windows only',
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Desktop',
+          platforms: ['Win64', 'Linux', 'Mac'],
+          description: 'All desktop platforms',
+        },
+        {
+          id: crypto.randomUUID(),
+          name: 'Full Release',
+          platforms: ['Win64', 'Linux', 'Mac', 'Android', 'IOS'],
+          description: 'All supported platforms',
+        },
+      ],
     };
   }
 }
