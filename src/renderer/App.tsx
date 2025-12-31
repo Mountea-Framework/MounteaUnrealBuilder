@@ -3,12 +3,58 @@ import { AppConfig } from '../shared/types';
 import Dashboard from './pages/Dashboard';
 import EngineConfig from './pages/EngineConfig';
 import BuildQueue from './pages/BuildQueue';
+import Settings from './pages/Settings';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
-type Page = 'dashboard' | 'engines' | 'queue';
+type Page = 'dashboard' | 'engines' | 'queue' | 'settings';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [config, setConfig] = useState<AppConfig | null>(null);
+
+  useKeyboardShortcuts([
+    {
+      key: '1',
+      ctrlKey: true,
+      action: () => setCurrentPage('dashboard'),
+      description: 'Go to Dashboard',
+    },
+    {
+      key: '2',
+      ctrlKey: true,
+      action: () => setCurrentPage('engines'),
+      description: 'Go to Engine Configuration',
+    },
+    {
+      key: '3',
+      ctrlKey: true,
+      action: () => setCurrentPage('queue'),
+      description: 'Go to Build Queue',
+    },
+    {
+      key: ',',
+      ctrlKey: true,
+      action: () => setCurrentPage('settings'),
+      description: 'Open Settings',
+    },
+    {
+      key: 'b',
+      ctrlKey: true,
+      action: () => {
+        if (currentPage === 'dashboard' && config && config.projects.length > 0) {
+          window.electronAPI.startBuild(config.projects[0].id);
+        }
+      },
+      description: 'Build first project',
+    },
+    {
+      key: 'x',
+      ctrlKey: true,
+      shiftKey: true,
+      action: () => window.electronAPI.cancelBuild(),
+      description: 'Cancel current build',
+    },
+  ]);
 
   useEffect(() => {
     loadConfig();
@@ -67,6 +113,16 @@ const App: React.FC = () => {
             Build Queue
           </li>
         </ul>
+        
+        <ul className="nav-menu nav-menu-bottom">
+          <li
+            className={currentPage === 'settings' ? 'active' : ''}
+            onClick={() => setCurrentPage('settings')}
+          >
+            <span className="icon">🔧</span>
+            Settings
+          </li>
+        </ul>
       </nav>
 
       <main className="content">
@@ -78,6 +134,9 @@ const App: React.FC = () => {
         )}
         {currentPage === 'queue' && (
           <BuildQueue config={config} />
+        )}
+        {currentPage === 'settings' && (
+          <Settings config={config} saveConfig={saveConfig} />
         )}
       </main>
     </div>

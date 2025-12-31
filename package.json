@@ -10,7 +10,42 @@
     "build:preload": "webpack --config webpack.preload.config.js",
     "build:renderer": "webpack --config webpack.renderer.config.js",
     "build:dev": "npm run build:main && npm run build:preload && npm run build:renderer",
-    "build": "cross-env NODE_ENV=production npm run build:dev"
+    "build": "cross-env NODE_ENV=production npm run build:dev",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.unrealbuilder.app",
+    "productName": "Unreal Builder",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "assets/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "keywords": ["unreal", "engine", "builder", "electron"],
   "author": "",
@@ -23,6 +58,7 @@
     "cross-env": "^10.1.0",
     "css-loader": "^7.1.2",
     "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
     "html-webpack-plugin": "^5.6.5",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.5.4",
