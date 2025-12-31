@@ -119,6 +119,13 @@ const App: React.FC = () => {
           >
             <span className="material-symbols-outlined icon">extension</span>
             Engine Configuration
+          </li>          
+          <li
+            className={currentPage === 'profiles' ? 'active' : ''}
+            onClick={() => setCurrentPage('profiles')}
+          >
+            <span className="material-symbols-outlined icon">layers</span>
+            Build Profiles
           </li>
           <li
             className={currentPage === 'queue' ? 'active' : ''}
@@ -126,13 +133,6 @@ const App: React.FC = () => {
           >
             <span className="material-symbols-outlined icon">build</span>
             Build Queue
-          </li>
-          <li
-            className={currentPage === 'profiles' ? 'active' : ''}
-            onClick={() => setCurrentPage('profiles')}
-          >
-            <span className="material-symbols-outlined icon">layers</span>
-            Build Profiles
           </li>
         </ul>
         
