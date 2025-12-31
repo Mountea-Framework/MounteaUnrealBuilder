@@ -16,7 +16,7 @@ export interface ProjectConfig {
   defaultProfileId?: string;
 }
 
-export type BuildStage = 'queued' | 'setup' | 'editor' | 'targets' | 'package' | 'complete';
+export type BuildStage = 'queued' | 'setup' | 'editor' | 'development' | 'shipping' | 'complete';
 
 export interface BuildRecord {
   id: string;

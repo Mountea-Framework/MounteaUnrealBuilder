@@ -5,13 +5,13 @@ interface Props {
   config: AppConfig;
 }
 
-const BUILD_STAGES: BuildStage[] = ['setup', 'editor', 'targets', 'package'];
+const BUILD_STAGES: BuildStage[] = ['setup', 'editor', 'development', 'shipping'];
 
 const STAGE_LABELS = {
   setup: 'Setup',
   editor: 'Editor',
-  targets: 'Targets',
-  package: 'Package',
+  development: 'Development',
+  shipping: 'Shipping',
   queued: 'Queued',
   complete: 'Complete',
 };
@@ -136,19 +136,20 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
   const getCurrentStageIndex = (log: string): number => {
     const logLower = log.toLowerCase();
     
-    if (logLower.includes('copying') && (logLower.includes('package') || logLower.includes('manifest') || logLower.includes('staging'))) return 3;
-    if (logLower.includes('packaging') || logLower.includes('creating package')) return 3;
+    if (logLower.includes('building unrealgame') && logLower.includes('shipping')) return 3;
+    if (logLower.includes('manifest-unrealgame-win64-shipping')) return 3;
+    if (logLower.includes('uba-unrealgame-win64-shipping')) return 3;
     
-    if (logLower.includes('building win64') && !logLower.includes('unrealeditor')) return 2;
-    if (logLower.includes('building linux') || logLower.includes('building mac') || logLower.includes('building android') || logLower.includes('building ios')) return 2;
-    if (logLower.includes('compiling') && !logLower.includes('unrealeditor')) return 2;
-    if (logLower.includes('target:') && logLower.includes('development')) return 2;
+    if (logLower.includes('building unrealgame') && logLower.includes('development')) return 2;
+    if (logLower.includes('manifest-unrealgame-win64-development')) return 2;
+    if (logLower.includes('uba-unrealgame-win64-development')) return 2;
     
-    if (logLower.includes('building unrealeditor') || logLower.includes('unrealeditor win64')) return 1;
-    if (logLower.includes('compiling unrealeditor')) return 1;
+    if (logLower.includes('building unrealeditor')) return 1;
+    if (logLower.includes('manifest-unrealeditor-win64-development')) return 1;
+    if (logLower.includes('uba-unrealeditor-win64-development')) return 1;
     
     if (logLower.includes('running automationtool') || logLower.includes('runuat')) return 0;
-    if (logLower.includes('initializing') && (logLower.includes('uat') || logLower.includes('automation'))) return 0;
+    if (logLower.includes('initializing script modules')) return 0;
     
     return -1;
   };
@@ -243,8 +244,8 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
                         </span>
                         {currentStageIndex === 0 && 'Initializing...'}
                         {currentStageIndex === 1 && 'Building Editor...'}
-                        {currentStageIndex === 2 && 'Building Targets...'}
-                        {currentStageIndex === 3 && 'Packaging...'}
+                        {currentStageIndex === 2 && 'Building Development...'}
+                        {currentStageIndex === 3 && 'Building Shipping...'}
                       </span>
                     )}
                   </div>
