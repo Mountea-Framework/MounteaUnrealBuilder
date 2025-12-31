@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { AppConfig } from '../shared/types';
@@ -82,4 +82,25 @@ ipcMain.handle('validate-engine-path', async (_event, enginePath: string) => {
 
 ipcMain.handle('scan-engines', async () => {
   return await scanEngines();
+});
+
+ipcMain.handle('select-file', async (_event, filters?: { name: string; extensions: string[] }[]) => {
+  if (!mainWindow) return null;
+  
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: filters || [],
+  });
+  
+  return result.canceled ? null : result.filePaths[0];
+});
+
+ipcMain.handle('select-folder', async () => {
+  if (!mainWindow) return null;
+  
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+  });
+  
+  return result.canceled ? null : result.filePaths[0];
 });

@@ -13,6 +13,8 @@ const api: IPC = {
   onBuildComplete: (callback) => {
     ipcRenderer.on('build-complete', (_event, success) => callback(success));
   },
+  selectFile: (filters) => ipcRenderer.invoke('select-file', filters),
+  selectFolder: () => ipcRenderer.invoke('select-folder'),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);

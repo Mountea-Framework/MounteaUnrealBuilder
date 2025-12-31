@@ -38,6 +38,8 @@ export interface IPC {
   startBuild: (projectId: string) => Promise<void>;
   onBuildLog: (callback: (data: string) => void) => void;
   onBuildComplete: (callback: (success: boolean) => void) => void;
+  selectFile: (filters?: { name: string; extensions: string[] }[]) => Promise<string | null>;
+  selectFolder: () => Promise<string | null>;
 }
 
 declare global {
