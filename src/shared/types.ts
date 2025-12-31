@@ -35,9 +35,11 @@ export interface IPC {
   saveConfig: (config: AppConfig) => Promise<void>;
   scanEngines: () => Promise<EngineInstallation[]>;
   validateEnginePath: (path: string) => Promise<boolean>;
-  startBuild: (projectId: string) => Promise<void>;
-  onBuildLog: (callback: (data: string) => void) => void;
-  onBuildComplete: (callback: (success: boolean) => void) => void;
+  startBuild: (projectId: string) => Promise<string>;
+  cancelBuild: () => Promise<void>;
+  onBuildLog: (callback: (buildId: string, log: string) => void) => void;
+  onBuildComplete: (callback: (buildId: string, success: boolean) => void) => void;
+  onBuildStarted: (callback: (buildId: string) => void) => void;
   selectFile: (filters?: { name: string; extensions: string[] }[]) => Promise<string | null>;
   selectFolder: () => Promise<string | null>;
 }

@@ -25,6 +25,14 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
     outputPath: '',
   });
 
+  const handleBuild = async (projectId: string) => {
+    try {
+      await window.electronAPI.startBuild(projectId);
+    } catch (error) {
+      alert('Failed to start build: ' + (error as Error).message);
+    }
+  };
+
   const startAddProject = () => {
     setEditingProject(null);
     setFormData({
@@ -287,7 +295,12 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
               >
                 Delete
               </button>
-              <button className="btn btn-primary">Build</button>
+              <button 
+                className="btn btn-primary"
+                onClick={() => handleBuild(project.id)}
+              >
+                Build
+              </button>
             </div>
           </div>
         ))}

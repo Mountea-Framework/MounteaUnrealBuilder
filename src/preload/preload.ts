@@ -7,11 +7,15 @@ const api: IPC = {
   scanEngines: () => ipcRenderer.invoke('scan-engines'),
   validateEnginePath: (path) => ipcRenderer.invoke('validate-engine-path', path),
   startBuild: (projectId) => ipcRenderer.invoke('start-build', projectId),
+  cancelBuild: () => ipcRenderer.invoke('cancel-build'),
   onBuildLog: (callback) => {
-    ipcRenderer.on('build-log', (_event, data) => callback(data));
+    ipcRenderer.on('build-log', (_event, buildId, log) => callback(buildId, log));
   },
   onBuildComplete: (callback) => {
-    ipcRenderer.on('build-complete', (_event, success) => callback(success));
+    ipcRenderer.on('build-complete', (_event, buildId, success) => callback(buildId, success));
+  },
+  onBuildStarted: (callback) => {
+    ipcRenderer.on('build-started', (_event, buildId) => callback(buildId));
   },
   selectFile: (filters) => ipcRenderer.invoke('select-file', filters),
   selectFolder: () => ipcRenderer.invoke('select-folder'),

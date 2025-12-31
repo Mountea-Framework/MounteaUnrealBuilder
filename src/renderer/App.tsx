@@ -12,6 +12,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadConfig();
+    
+    const interval = setInterval(loadConfig, 2000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const loadConfig = async () => {

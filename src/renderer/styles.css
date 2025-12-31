@@ -543,3 +543,45 @@ body {
   font-size: 0.875rem;
   color: var(--text-primary);
 }
+
+.build-log-container {
+  margin-top: 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.build-log-header {
+  padding: 0.75rem 1rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.build-log {
+  padding: 1rem;
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  background: #0d0d0d;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.build-item.expanded {
+  cursor: pointer;
+  border-color: var(--accent);
+}
+
+.expand-icon {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
