@@ -5,13 +5,12 @@ interface Props {
   config: AppConfig;
 }
 
-const BUILD_STAGES: BuildStage[] = ['clean', 'sync', 'cook', 'compile', 'package'];
+const BUILD_STAGES: BuildStage[] = ['setup', 'editor', 'targets', 'package'];
 
 const STAGE_LABELS = {
-  clean: 'Clean',
-  sync: 'Sync',
-  cook: 'Cook',
-  compile: 'Compile',
+  setup: 'Setup',
+  editor: 'Editor',
+  targets: 'Targets',
   package: 'Package',
   queued: 'Queued',
   complete: 'Complete',
@@ -22,6 +21,8 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
   const [expandedBuild, setExpandedBuild] = useState<string | null>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [currentStageIndex, setCurrentStageIndex] = useState(-1);
+  const [activeBuildId, setActiveBuildId] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,25 +37,41 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
 
   useEffect(() => {
     const handleBuildLog = (buildId: string, log: string) => {
-      setBuildLogs(prev => ({
-        ...prev,
-        [buildId]: (prev[buildId] || '') + log,
-      }));
+      setBuildLogs(prev => {
+        const updatedLog = (prev[buildId] || '') + log;
+        
+        if (buildId === activeBuildId) {
+          const detectedStage = getCurrentStageIndex(updatedLog);
+          if (detectedStage > currentStageIndex) {
+            setCurrentStageIndex(detectedStage);
+          }
+        }
+        
+        return {
+          ...prev,
+          [buildId]: updatedLog,
+        };
+      });
     };
 
     const handleBuildComplete = (buildId: string, success: boolean) => {
-      console.log(`Build ${buildId} completed: ${success ? 'success' : 'failed'}`);
+      if (buildId === activeBuildId) {
+        setCurrentStageIndex(-1);
+        setActiveBuildId(null);
+      }
     };
 
     const handleBuildStarted = (buildId: string) => {
       setExpandedBuild(buildId);
       setElapsedTime(0);
+      setCurrentStageIndex(-1);
+      setActiveBuildId(buildId);
     };
 
     window.electronAPI.onBuildLog(handleBuildLog);
     window.electronAPI.onBuildComplete(handleBuildComplete);
     window.electronAPI.onBuildStarted(handleBuildStarted);
-  }, []);
+  }, [activeBuildId, currentStageIndex]);
 
   useEffect(() => {
     if (autoScroll && expandedBuild && logEndRef.current) {
@@ -119,11 +136,19 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
   const getCurrentStageIndex = (log: string): number => {
     const logLower = log.toLowerCase();
     
-    if (logLower.includes('packaging') || logLower.includes('package')) return 4;
-    if (logLower.includes('compiling') || logLower.includes('compile')) return 3;
-    if (logLower.includes('cooking') || logLower.includes('cook')) return 2;
-    if (logLower.includes('syncing') || logLower.includes('sync')) return 1;
-    if (logLower.includes('cleaning') || logLower.includes('clean')) return 0;
+    if (logLower.includes('copying') && (logLower.includes('package') || logLower.includes('manifest') || logLower.includes('staging'))) return 3;
+    if (logLower.includes('packaging') || logLower.includes('creating package')) return 3;
+    
+    if (logLower.includes('building win64') && !logLower.includes('unrealeditor')) return 2;
+    if (logLower.includes('building linux') || logLower.includes('building mac') || logLower.includes('building android') || logLower.includes('building ios')) return 2;
+    if (logLower.includes('compiling') && !logLower.includes('unrealeditor')) return 2;
+    if (logLower.includes('target:') && logLower.includes('development')) return 2;
+    
+    if (logLower.includes('building unrealeditor') || logLower.includes('unrealeditor win64')) return 1;
+    if (logLower.includes('compiling unrealeditor')) return 1;
+    
+    if (logLower.includes('running automationtool') || logLower.includes('runuat')) return 0;
+    if (logLower.includes('initializing') && (logLower.includes('uat') || logLower.includes('automation'))) return 0;
     
     return -1;
   };
@@ -145,6 +170,24 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
     const duration = Math.round((endTime - startTime) / 1000);
     return formatTime(duration);
   };
+  
+  useEffect(() => {
+    if (activeBuild && activeBuild.id !== activeBuildId) {
+      setActiveBuildId(activeBuild.id);
+      setCurrentStageIndex(-1);
+      
+      const currentLog = buildLogs[activeBuild.id] || '';
+      if (currentLog) {
+        const detectedStage = getCurrentStageIndex(currentLog);
+        if (detectedStage >= 0) {
+          setCurrentStageIndex(detectedStage);
+        }
+      }
+    } else if (!activeBuild && activeBuildId) {
+      setActiveBuildId(null);
+      setCurrentStageIndex(-1);
+    }
+  }, [activeBuild, activeBuildId, buildLogs]);
 
   if (!activeBuild && queuedBuilds.length === 0 && completedBuilds.length === 0) {
     return (
@@ -162,8 +205,6 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
       </div>
     );
   }
-
-  const currentStageIndex = activeBuild ? getCurrentStageIndex(buildLogs[activeBuild.id] || '') : -1;
 
   return (
     <div className="page build-queue">
@@ -196,11 +237,14 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
                   <h3>Build Progress</h3>
                   <div className="pipeline-status">
                     {currentStageIndex >= 0 && currentStageIndex < BUILD_STAGES.length && (
-                      <span>
+                      <span className="pipeline-status">
                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>
                           sync
                         </span>
-                        {STAGE_LABELS[BUILD_STAGES[currentStageIndex]]}...
+                        {currentStageIndex === 0 && 'Initializing...'}
+                        {currentStageIndex === 1 && 'Building Editor...'}
+                        {currentStageIndex === 2 && 'Building Targets...'}
+                        {currentStageIndex === 3 && 'Packaging...'}
                       </span>
                     )}
                   </div>
