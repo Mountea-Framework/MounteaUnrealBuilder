@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { AppConfig } from '../shared/types';
+import { scanEngines, validateEngine } from './scanner';
 
 let mainWindow: BrowserWindow | null = null;
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
@@ -25,11 +26,7 @@ const createWindow = () => {
     mainWindow?.show();
   });
 
-  if (process.env.DEV_SERVER === 'true') {
-     mainWindow.loadURL('http://localhost:3000');
-   } else {
-     mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
-   }
+  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
@@ -81,4 +78,8 @@ ipcMain.handle('validate-engine-path', async (_event, enginePath: string) => {
   } catch {
     return false;
   }
+});
+
+ipcMain.handle('scan-engines', async () => {
+  return await scanEngines();
 });
