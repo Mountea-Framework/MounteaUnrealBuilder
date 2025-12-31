@@ -61,8 +61,16 @@ const App: React.FC = () => {
     
     const interval = setInterval(loadConfig, 5000);
     
+    const handleBuildStarted = () => {
+      if (config?.settings.autoOpenBuildQueue) {
+        setCurrentPage('queue');
+      }
+    };
+    
+    window.electronAPI.onBuildStarted(handleBuildStarted);
+    
     return () => clearInterval(interval);
-  }, []);
+  }, [config?.settings.autoOpenBuildQueue]);
 
   const loadConfig = async () => {
     const loadedConfig = await window.electronAPI.getConfig();

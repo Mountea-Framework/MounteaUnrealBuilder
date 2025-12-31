@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Notification } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { AppConfig, BuildRecord } from '../shared/types';
@@ -29,6 +29,16 @@ const buildExecutor = new BuildExecutor(
         build.status = success ? 'success' : 'failed';
         build.endTime = new Date().toISOString();
         build.log = buildLogs.get(buildId) || '';
+        
+        const project = config.projects.find(p => p.id === build.projectId);
+        if (project && config.settings.showNotifications) {
+          const notification = new Notification({
+            title: success ? '✓ Build Successful' : '✗ Build Failed',
+            body: `${project.name} - ${success ? 'Ready to use!' : 'Check logs for details'}`,
+            silent: false,
+          });
+          notification.show();
+        }
       }
       
       await saveConfigInternal(config);
@@ -84,6 +94,19 @@ async function loadConfig(): Promise<AppConfig> {
         engines: [],
         projects: [],
         buildHistory: [],
+        settings: {
+          showNotifications: true,
+          autoOpenBuildQueue: true,
+          maxHistoryBuilds: 20,
+        },
+      };
+    }
+    
+    if (!config.settings) {
+      config.settings = {
+        showNotifications: true,
+        autoOpenBuildQueue: true,
+        maxHistoryBuilds: 20,
       };
     }
     
@@ -99,12 +122,33 @@ async function loadConfig(): Promise<AppConfig> {
       engines: [],
       projects: [],
       buildHistory: [],
+      settings: {
+        showNotifications: true,
+        autoOpenBuildQueue: true,
+        maxHistoryBuilds: 20,
+      },
     };
   }
 }
 
 async function saveConfigInternal(config: AppConfig): Promise<void> {
   try {
+    const limit = config.settings.maxHistoryBuilds;
+    if (limit > 0) {
+      const completedBuilds = config.buildHistory.filter(
+        b => b.status === 'success' || b.status === 'failed'
+      ).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+      
+      const activeBuilds = config.buildHistory.filter(
+        b => b.status === 'building' || b.status === 'queued'
+      );
+      
+      config.buildHistory = [
+        ...activeBuilds,
+        ...completedBuilds.slice(0, limit)
+      ];
+    }
+    
     await fs.mkdir(path.dirname(CONFIG_PATH), { recursive: true });
     const configJson = JSON.stringify(config, null, 2);
     
@@ -125,8 +169,8 @@ async function saveConfigInternal(config: AppConfig): Promise<void> {
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 1000,
+    width: 1200,
+    height: 800,
     minWidth: 900,
     minHeight: 600,
     webPreferences: {
@@ -239,4 +283,22 @@ ipcMain.handle('start-build', async (_event, projectId: string) => {
 
 ipcMain.handle('cancel-build', async () => {
   buildExecutor.cancelBuild();
+});
+
+ipcMain.handle('export-logs', async (_event, buildId: string, log: string) => {
+  if (!mainWindow) return;
+  
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: `build-log-${buildId}.txt`,
+    filters: [{ name: 'Text Files', extensions: ['txt'] }],
+  });
+  
+  if (!result.canceled && result.filePath) {
+    await fs.writeFile(result.filePath, log, 'utf-8');
+  }
+});
+
+ipcMain.handle('open-folder', async (_event, folderPath: string) => {
+  const { shell } = require('electron');
+  await shell.openPath(folderPath);
 });

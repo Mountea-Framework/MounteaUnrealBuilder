@@ -24,10 +24,17 @@ export interface BuildRecord {
   log: string;
 }
 
+export interface UserSettings {
+  showNotifications: boolean;
+  autoOpenBuildQueue: boolean;
+  maxHistoryBuilds: number;
+}
+
 export interface AppConfig {
   engines: EngineInstallation[];
   projects: ProjectConfig[];
   buildHistory: BuildRecord[];
+  settings: UserSettings;
 }
 
 export interface IPC {

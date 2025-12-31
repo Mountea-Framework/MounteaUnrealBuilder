@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AppConfig } from '../../shared/types';
 
 interface Props {
@@ -7,9 +7,35 @@ interface Props {
 }
 
 const Settings: React.FC<Props> = ({ config, saveConfig }) => {
-  const [maxHistoryBuilds, setMaxHistoryBuilds] = useState(20);
-  const [autoOpenBuildQueue, setAutoOpenBuildQueue] = useState(true);
-  const [showNotifications, setShowNotifications] = useState(true);
+  const handleToggleNotifications = async () => {
+    await saveConfig({
+      ...config,
+      settings: {
+        ...config.settings,
+        showNotifications: !config.settings.showNotifications,
+      },
+    });
+  };
+
+  const handleToggleAutoOpenQueue = async () => {
+    await saveConfig({
+      ...config,
+      settings: {
+        ...config.settings,
+        autoOpenBuildQueue: !config.settings.autoOpenBuildQueue,
+      },
+    });
+  };
+
+  const handleChangeHistoryLimit = async (value: number) => {
+    await saveConfig({
+      ...config,
+      settings: {
+        ...config.settings,
+        maxHistoryBuilds: value,
+      },
+    });
+  };
 
   const handleClearAllData = async () => {
     if (!confirm('Clear ALL data including engines, projects, and build history? This cannot be undone!')) {
@@ -20,6 +46,11 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
       engines: [],
       projects: [],
       buildHistory: [],
+      settings: {
+        showNotifications: true,
+        autoOpenBuildQueue: true,
+        maxHistoryBuilds: 20,
+      },
     };
 
     await saveConfig(emptyConfig);
@@ -57,8 +88,8 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
             <label className="toggle">
               <input
                 type="checkbox"
-                checked={showNotifications}
-                onChange={(e) => setShowNotifications(e.target.checked)}
+                checked={config.settings.showNotifications}
+                onChange={handleToggleNotifications}
               />
               <span className="toggle-slider"></span>
             </label>
@@ -72,8 +103,8 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
             <label className="toggle">
               <input
                 type="checkbox"
-                checked={autoOpenBuildQueue}
-                onChange={(e) => setAutoOpenBuildQueue(e.target.checked)}
+                checked={config.settings.autoOpenBuildQueue}
+                onChange={handleToggleAutoOpenQueue}
               />
               <span className="toggle-slider"></span>
             </label>
@@ -86,8 +117,8 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
             </div>
             <select
               className="select-input"
-              value={maxHistoryBuilds}
-              onChange={(e) => setMaxHistoryBuilds(Number(e.target.value))}
+              value={config.settings.maxHistoryBuilds}
+              onChange={(e) => handleChangeHistoryLimit(Number(e.target.value))}
               style={{ width: '150px' }}
             >
               <option value={10}>10 builds</option>
