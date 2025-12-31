@@ -27,6 +27,16 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
     });
   };
 
+  const handleToggleMinimizeToTray = async () => {
+    await saveConfig({
+      ...config,
+      settings: {
+        ...config.settings,
+        minimizeToTray: !config.settings.minimizeToTray,
+      },
+    });
+  };
+
   const handleChangeHistoryLimit = async (value: number) => {
     await saveConfig({
       ...config,
@@ -50,8 +60,16 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
         showNotifications: true,
         autoOpenBuildQueue: true,
         maxHistoryBuilds: 20,
+        minimizeToTray: false,
       },
       profiles: [],
+      analytics: {
+        totalBuilds: 0,
+        successfulBuilds: 0,
+        failedBuilds: 0,
+        averageBuildTime: 0,
+        platformStats: {},
+      },
     };
 
     await saveConfig(emptyConfig);
@@ -113,6 +131,21 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
 
           <div className="setting-item">
             <div className="setting-info">
+              <h4>Minimize to System Tray</h4>
+              <p>Keep app running in system tray when minimized</p>
+            </div>
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={config.settings.minimizeToTray}
+                onChange={handleToggleMinimizeToTray}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div className="setting-item">
+            <div className="setting-info">
               <h4>Build History Limit</h4>
               <p>Maximum number of completed builds to keep</p>
             </div>
@@ -132,25 +165,47 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
         </div>
 
         <div className="section">
-          <h3>Statistics</h3>
+          <h3>Build Analytics</h3>
           <div className="stats-grid">
             <div className="stat-card">
+              <div className="stat-value">{config.analytics.totalBuilds}</div>
+              <div className="stat-label">Total Builds</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{config.analytics.successfulBuilds}</div>
+              <div className="stat-label">Successful Builds</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{config.analytics.failedBuilds}</div>
+              <div className="stat-label">Failed Builds</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">
+                {config.analytics.totalBuilds > 0
+                  ? Math.round((config.analytics.successfulBuilds / config.analytics.totalBuilds) * 100)
+                  : 0}%
+              </div>
+              <div className="stat-label">Success Rate</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">
+                {config.analytics.averageBuildTime > 0
+                  ? `${Math.round(config.analytics.averageBuildTime / 60)}m`
+                  : '--'}
+              </div>
+              <div className="stat-label">Avg Build Time</div>
+            </div>
+            <div className="stat-card">
               <div className="stat-value">{config.engines.length}</div>
-              <div className="stat-label">Engines Configured</div>
+              <div className="stat-label">Engines</div>
             </div>
             <div className="stat-card">
               <div className="stat-value">{config.projects.length}</div>
               <div className="stat-label">Projects</div>
             </div>
             <div className="stat-card">
-              <div className="stat-value">{config.buildHistory.length}</div>
-              <div className="stat-label">Total Builds</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">
-                {config.buildHistory.filter(b => b.status === 'success').length}
-              </div>
-              <div className="stat-label">Successful Builds</div>
+              <div className="stat-value">{config.profiles.length}</div>
+              <div className="stat-label">Profiles</div>
             </div>
           </div>
         </div>

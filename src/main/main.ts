@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu , ipcMain, dialog, Notification } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Notification, Menu, Tray, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as crypto from 'crypto';
@@ -7,6 +7,7 @@ import { scanEngines, validateEngine } from './scanner';
 import { BuildExecutor } from './builder';
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
 const buildLogs = new Map<string, string>();
 
@@ -30,6 +31,33 @@ const buildExecutor = new BuildExecutor(
         build.status = success ? 'success' : 'failed';
         build.endTime = new Date().toISOString();
         build.log = buildLogs.get(buildId) || '';
+        
+        const buildTime = new Date(build.endTime).getTime() - new Date(build.startTime).getTime();
+        const buildTimeSeconds = Math.round(buildTime / 1000);
+        
+        config.analytics.totalBuilds++;
+        if (success) {
+          config.analytics.successfulBuilds++;
+        } else {
+          config.analytics.failedBuilds++;
+        }
+        
+        const totalTime = (config.analytics.averageBuildTime * (config.analytics.totalBuilds - 1)) + buildTimeSeconds;
+        config.analytics.averageBuildTime = Math.round(totalTime / config.analytics.totalBuilds);
+        config.analytics.lastBuildTime = buildTimeSeconds;
+        
+        if (build.platforms) {
+          build.platforms.forEach(platform => {
+            if (!config.analytics.platformStats[platform]) {
+              config.analytics.platformStats[platform] = { total: 0, successful: 0, avgTime: 0 };
+            }
+            const stats = config.analytics.platformStats[platform];
+            stats.total++;
+            if (success) stats.successful++;
+            const platformTotalTime = (stats.avgTime * (stats.total - 1)) + buildTimeSeconds;
+            stats.avgTime = Math.round(platformTotalTime / stats.total);
+          });
+        }
         
         const project = config.projects.find(p => p.id === build.projectId);
         if (project && config.settings.showNotifications) {
@@ -99,6 +127,7 @@ async function loadConfig(): Promise<AppConfig> {
           showNotifications: true,
           autoOpenBuildQueue: true,
           maxHistoryBuilds: 20,
+          minimizeToTray: false,
         },
         profiles: [
           {
@@ -120,6 +149,13 @@ async function loadConfig(): Promise<AppConfig> {
             description: 'All supported platforms',
           },
         ],
+        analytics: {
+          totalBuilds: 0,
+          successfulBuilds: 0,
+          failedBuilds: 0,
+          averageBuildTime: 0,
+          platformStats: {},
+        },
       };
     }
     
@@ -128,6 +164,17 @@ async function loadConfig(): Promise<AppConfig> {
         showNotifications: true,
         autoOpenBuildQueue: true,
         maxHistoryBuilds: 20,
+        minimizeToTray: false,
+      };
+    }
+    
+    if (!config.analytics) {
+      config.analytics = {
+        totalBuilds: 0,
+        successfulBuilds: 0,
+        failedBuilds: 0,
+        averageBuildTime: 0,
+        platformStats: {},
       };
     }
     
@@ -170,6 +217,7 @@ async function loadConfig(): Promise<AppConfig> {
         showNotifications: true,
         autoOpenBuildQueue: true,
         maxHistoryBuilds: 20,
+        minimizeToTray: false,
       },
       profiles: [
         {
@@ -191,6 +239,13 @@ async function loadConfig(): Promise<AppConfig> {
           description: 'All supported platforms',
         },
       ],
+      analytics: {
+        totalBuilds: 0,
+        successfulBuilds: 0,
+        failedBuilds: 0,
+        averageBuildTime: 0,
+        platformStats: {},
+      },
     };
   }
 }
@@ -231,6 +286,61 @@ async function saveConfigInternal(config: AppConfig): Promise<void> {
   }
 }
 
+const createTray = async () => {
+  const config = await loadConfig();
+  
+  if (!config.settings.minimizeToTray) {
+    return;
+  }
+
+  const iconPath = path.join(__dirname, '../../assets/icon.png');
+  let icon: Electron.NativeImage;
+  
+  try {
+    icon = nativeImage.createFromPath(iconPath);
+    if (icon.isEmpty()) {
+      icon = nativeImage.createEmpty();
+    }
+  } catch {
+    icon = nativeImage.createEmpty();
+  }
+
+  tray = new Tray(icon);
+  
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show Unreal Builder',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setToolTip('Unreal Builder');
+  tray.setContextMenu(contextMenu);
+  
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide();
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+  });
+};
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -257,9 +367,20 @@ const createWindow = () => {
     mainWindow.webContents.openDevTools();
   }
 
+  mainWindow.on('close', async (event) => {
+    const config = await loadConfig();
+    
+    if (config.settings.minimizeToTray && tray) {
+      event.preventDefault();
+      mainWindow?.hide();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+  
+  createTray();
 };
 
 app.whenReady().then(() => {
@@ -326,6 +447,11 @@ ipcMain.handle('select-folder', async () => {
 ipcMain.handle('start-build', async (_event, projectId: string) => {
   try {
     const config = await loadConfig();
+    const project = config.projects.find(p => p.id === projectId);
+    
+    if (!project) {
+      throw new Error('Project not found');
+    }
     
     const buildRecord: BuildRecord = {
       id: crypto.randomUUID(),
@@ -333,6 +459,7 @@ ipcMain.handle('start-build', async (_event, projectId: string) => {
       status: 'queued',
       startTime: new Date().toISOString(),
       log: '',
+      platforms: project.targetPlatforms,
     };
 
     config.buildHistory.push(buildRecord);

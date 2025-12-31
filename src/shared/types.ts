@@ -16,19 +16,24 @@ export interface ProjectConfig {
   defaultProfileId?: string;
 }
 
+export type BuildStage = 'queued' | 'clean' | 'sync' | 'cook' | 'compile' | 'package' | 'complete';
+
 export interface BuildRecord {
   id: string;
   projectId: string;
   status: 'queued' | 'building' | 'success' | 'failed';
+  currentStage?: BuildStage;
   startTime: string;
   endTime?: string;
   log: string;
+  platforms?: string[];
 }
 
 export interface UserSettings {
   showNotifications: boolean;
   autoOpenBuildQueue: boolean;
   maxHistoryBuilds: number;
+  minimizeToTray: boolean;
 }
 
 export interface BuildProfile {
@@ -38,12 +43,22 @@ export interface BuildProfile {
   description?: string;
 }
 
+export interface BuildAnalytics {
+  totalBuilds: number;
+  successfulBuilds: number;
+  failedBuilds: number;
+  averageBuildTime: number;
+  lastBuildTime?: number;
+  platformStats: Record<string, { total: number; successful: number; avgTime: number }>;
+}
+
 export interface AppConfig {
   engines: EngineInstallation[];
   projects: ProjectConfig[];
   buildHistory: BuildRecord[];
   settings: UserSettings;
   profiles: BuildProfile[];
+  analytics: BuildAnalytics;
 }
 
 export interface IPC {

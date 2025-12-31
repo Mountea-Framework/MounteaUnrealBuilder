@@ -249,7 +249,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                   </button>
                   <button
                     className="btn btn-text"
-                    onClick={() => handleOpenOutputFolder(project.outputPath)}
+                    onClick={() =>handleOpenOutputFolder(`${project.outputPath}/${project.name}`)}
                     title="Open output folder"
                   >
                     <span className="material-symbols-outlined">folder_open</span>

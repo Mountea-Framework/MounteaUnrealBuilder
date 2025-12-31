@@ -1,13 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AppConfig } from '../../shared/types';
+import { AppConfig, BuildStage } from '../../shared/types';
 
 interface Props {
   config: AppConfig;
 }
 
+const BUILD_STAGES: BuildStage[] = ['clean', 'sync', 'cook', 'compile', 'package'];
+
+const STAGE_LABELS = {
+  clean: 'Clean',
+  sync: 'Sync',
+  cook: 'Cook',
+  compile: 'Compile',
+  package: 'Package',
+  queued: 'Queued',
+  complete: 'Complete',
+};
+
 const BuildQueue: React.FC<Props> = ({ config }) => {
   const [buildLogs, setBuildLogs] = useState<Record<string, string>>({});
   const [expandedBuild, setExpandedBuild] = useState<string | null>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +48,7 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
 
     const handleBuildStarted = (buildId: string) => {
       setExpandedBuild(buildId);
+      setElapsedTime(0);
     };
 
     window.electronAPI.onBuildLog(handleBuildLog);
@@ -42,10 +57,26 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
   }, []);
 
   useEffect(() => {
-    if (expandedBuild && logEndRef.current) {
+    if (autoScroll && expandedBuild && logEndRef.current) {
       logEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [buildLogs, expandedBuild]);
+  }, [buildLogs, expandedBuild, autoScroll]);
+
+  useEffect(() => {
+    const activeBuild = config.buildHistory.find(b => b.status === 'building');
+    
+    if (!activeBuild) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const startTime = new Date(activeBuild.startTime).getTime();
+      const now = Date.now();
+      setElapsedTime(Math.floor((now - startTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [config.buildHistory]);
 
   const handleCancelBuild = async () => {
     if (confirm('Cancel the current build?')) {
@@ -74,8 +105,27 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
   const handleOpenOutputFolder = async (projectId: string) => {
     const project = config.projects.find(p => p.id === projectId);
     if (project) {
-      await window.electronAPI.openFolder(project.outputPath);
+      const outPath = `${project.outputPath}/${project.name}`;
+      await window.electronAPI.openFolder(outPath);
     }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const getCurrentStageIndex = (log: string): number => {
+    const logLower = log.toLowerCase();
+    
+    if (logLower.includes('packaging') || logLower.includes('package')) return 4;
+    if (logLower.includes('compiling') || logLower.includes('compile')) return 3;
+    if (logLower.includes('cooking') || logLower.includes('cook')) return 2;
+    if (logLower.includes('syncing') || logLower.includes('sync')) return 1;
+    if (logLower.includes('cleaning') || logLower.includes('clean')) return 0;
+    
+    return -1;
   };
 
   const activeBuild = config.buildHistory.find(b => b.status === 'building');
@@ -93,11 +143,7 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
     const startTime = new Date(start).getTime();
     const endTime = end ? new Date(end).getTime() : Date.now();
     const duration = Math.round((endTime - startTime) / 1000);
-    
-    if (duration < 60) return `${duration}s`;
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-    return `${minutes}m ${seconds}s`;
+    return formatTime(duration);
   };
 
   if (!activeBuild && queuedBuilds.length === 0 && completedBuilds.length === 0) {
@@ -117,6 +163,8 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
     );
   }
 
+  const currentStageIndex = activeBuild ? getCurrentStageIndex(buildLogs[activeBuild.id] || '') : -1;
+
   return (
     <div className="page build-queue">
       <header className="page-header">
@@ -132,34 +180,92 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
       <div className="page-content">
         {activeBuild && (
           <div className="section">
-            <h3>Active Build</h3>
-            <div className="build-item active">
-              <div className="build-status">
-                <div className="spinner small"></div>
-                Building
+            <div className="build-pipeline-container">
+              <div className="build-stats-row">
+                <div className="build-stat-card">
+                  <span className="material-symbols-outlined">schedule</span>
+                  <div>
+                    <div className="stat-label">Time Elapsed</div>
+                    <div className="stat-value">{formatTime(elapsedTime)}</div>
+                  </div>
+                </div>
               </div>
-              <div className="build-info">
-                <h4>{getProjectName(activeBuild.projectId)}</h4>
-                <p>Started: {new Date(activeBuild.startTime).toLocaleTimeString()} • {formatDuration(activeBuild.startTime)}</p>
-              </div>
-              <button className="btn btn-danger" onClick={handleCancelBuild}>
-                <span className="material-symbols-outlined">close</span>
-                Cancel
-              </button>
-            </div>
 
-            {activeBuild && (
-              <div className="build-log-container">
+              <div className="pipeline-section">
+                <div className="pipeline-header">
+                  <h3>Build Progress</h3>
+                  <div className="pipeline-status">
+                    {currentStageIndex >= 0 && currentStageIndex < BUILD_STAGES.length && (
+                      <span>
+                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>
+                          sync
+                        </span>
+                        {STAGE_LABELS[BUILD_STAGES[currentStageIndex]]}...
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="build-pipeline">
+                  {BUILD_STAGES.map((stage, index) => {
+                    const isComplete = index < currentStageIndex;
+                    const isCurrent = index === currentStageIndex;
+                    const isUpcoming = index > currentStageIndex;
+
+                    return (
+                      <React.Fragment key={stage}>
+                        <div className={`pipeline-stage ${isComplete ? 'complete' : ''} ${isCurrent ? 'current' : ''} ${isUpcoming ? 'upcoming' : ''}`}>
+                          <div className="pipeline-stage-icon">
+                            {isComplete ? (
+                              <span className="material-symbols-outlined">check_circle</span>
+                            ) : isCurrent ? (
+                              <div className="spinner small"></div>
+                            ) : (
+                              <div className="pipeline-stage-dot"></div>
+                            )}
+                          </div>
+                          <div className="pipeline-stage-label">{STAGE_LABELS[stage]}</div>
+                        </div>
+                        {index < BUILD_STAGES.length - 1 && (
+                          <div className={`pipeline-connector ${isComplete ? 'complete' : ''}`}></div>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="build-log-panel">
                 <div className="build-log-header">
-                  <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>terminal</span>
-                  <span>Build Log</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>terminal</span>
+                    <span>Output Log</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={autoScroll}
+                        onChange={(e) => setAutoScroll(e.target.checked)}
+                        style={{ accentColor: 'var(--primary)' }}
+                      />
+                      Auto-scroll
+                    </label>
+                    <button className="btn btn-text" onClick={() => handleExportLogs(activeBuild.id)} title="Export logs">
+                      <span className="material-symbols-outlined">download</span>
+                    </button>
+                    <button className="btn btn-danger" onClick={handleCancelBuild}>
+                      <span className="material-symbols-outlined">close</span>
+                      Cancel Build
+                    </button>
+                  </div>
                 </div>
                 <pre className="build-log">
                   {buildLogs[activeBuild.id] || 'Initializing build...\n'}
                   <div ref={logEndRef} />
                 </pre>
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -174,6 +280,15 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
                 </div>
                 <div className="build-info">
                   <h4>{getProjectName(build.projectId)}</h4>
+                  {build.platforms && (
+                    <div className="project-platforms" style={{ marginTop: '0.25rem' }}>
+                      {build.platforms.map(platform => (
+                        <span key={platform} className="platform-chip">
+                          {platform}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -202,6 +317,15 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
                         {new Date(build.startTime).toLocaleString()}
                         {build.endTime && ` • ${formatDuration(build.startTime, build.endTime)}`}
                       </p>
+                      {build.platforms && (
+                        <div className="project-platforms" style={{ marginTop: '0.25rem' }}>
+                          {build.platforms.map(platform => (
+                            <span key={platform} className="platform-chip">
+                              {platform}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <span className="material-symbols-outlined expand-icon">
                       chevron_right
