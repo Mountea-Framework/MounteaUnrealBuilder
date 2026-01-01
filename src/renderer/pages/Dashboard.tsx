@@ -46,6 +46,8 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
     const tempProject = {
       ...project,
       targetPlatforms: profile.platforms,
+      targetConfig: profile.targetConfig || project.targetConfig,
+      defaultProfileId: profileId,
     };
 
     await saveConfig({
@@ -257,7 +259,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                 </div>
 
                 <div className="project-actions">
-                  {config.profiles.length > 0 && (
+                  {config.profiles.filter(p => (p.profileType || 'plugin') === (project.projectType || 'plugin')).length > 0 && (
                     <div style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
                       <select
                         className="select-input"
@@ -265,8 +267,10 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                         onChange={(e) => setSelectedProfiles({ ...selectedProfiles, [project.id]: e.target.value })}
                         style={{ width: '100%' }}
                       >
-                        <option value="">Custom Platforms</option>
-                        {config.profiles.map(profile => (
+                        <option value="">Custom Settings</option>
+                        {config.profiles
+                          .filter(p => (p.profileType || 'plugin') === (project.projectType || 'plugin'))
+                          .map(profile => (
                           <option key={profile.id} value={profile.id}>
                             {profile.name} ({profile.platforms.join(', ')})
                           </option>
@@ -445,7 +449,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                 </div>
               )}
 
-              {config.profiles.length > 0 && (
+              {config.profiles.filter(p => (p.profileType || 'plugin') === formData.projectType).length > 0 && (
                 <div className="form-group">
                   <label>Default Build Profile</label>
                   <select
@@ -453,15 +457,17 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                     value={formData.defaultProfileId}
                     onChange={(e) => setFormData({ ...formData, defaultProfileId: e.target.value })}
                   >
-                    <option value="">None (use custom platforms above)</option>
-                    {config.profiles.map(profile => (
+                    <option value="">None (use custom settings above)</option>
+                    {config.profiles
+                      .filter(p => (p.profileType || 'plugin') === formData.projectType)
+                      .map(profile => (
                       <option key={profile.id} value={profile.id}>
                         {profile.name} - {profile.platforms.join(', ')}
                       </option>
                     ))}
                   </select>
                   <p className="help-text">
-                    Set a default profile to quickly build with preset platforms
+                    Set a default profile to quickly build with preset configurations
                   </p>
                 </div>
               )}

@@ -106,7 +106,11 @@ async function processNextBuild() {
       mainWindow.webContents.send('build-started', nextBuild.id);
     }
 
-    await buildExecutor.startBuild(nextBuild.id, project, engine);
+    const profile = project.defaultProfileId 
+      ? config.profiles.find(p => p.id === project.defaultProfileId)
+      : undefined;
+
+    await buildExecutor.startBuild(nextBuild.id, project, engine, profile);
   } catch (error) {
     console.error('Failed to process next build:', error);
   }
@@ -133,18 +137,21 @@ async function loadConfig(): Promise<AppConfig> {
           {
             id: crypto.randomUUID(),
             name: 'Quick Test',
+            profileType: 'plugin',
             platforms: ['Win64'],
             description: 'Fast build for Windows only',
           },
           {
             id: crypto.randomUUID(),
             name: 'Desktop',
+            profileType: 'plugin',
             platforms: ['Win64', 'Linux', 'Mac'],
             description: 'All desktop platforms',
           },
           {
             id: crypto.randomUUID(),
             name: 'Full Release',
+            profileType: 'plugin',
             platforms: ['Win64', 'Linux', 'Mac', 'Android', 'IOS'],
             description: 'All supported platforms',
           },
@@ -183,18 +190,21 @@ async function loadConfig(): Promise<AppConfig> {
         {
           id: crypto.randomUUID(),
           name: 'Quick Test',
+          profileType: 'plugin',
           platforms: ['Win64'],
           description: 'Fast build for Windows only',
         },
         {
           id: crypto.randomUUID(),
           name: 'Desktop',
+          profileType: 'plugin',
           platforms: ['Win64', 'Linux', 'Mac'],
           description: 'All desktop platforms',
         },
         {
           id: crypto.randomUUID(),
           name: 'Full Release',
+          profileType: 'plugin',
           platforms: ['Win64', 'Linux', 'Mac', 'Android', 'IOS'],
           description: 'All supported platforms',
         },
@@ -223,18 +233,21 @@ async function loadConfig(): Promise<AppConfig> {
         {
           id: crypto.randomUUID(),
           name: 'Quick Test',
+          profileType: 'plugin',
           platforms: ['Win64'],
           description: 'Fast build for Windows only',
         },
         {
           id: crypto.randomUUID(),
           name: 'Desktop',
+          profileType: 'plugin',
           platforms: ['Win64', 'Linux', 'Mac'],
           description: 'All desktop platforms',
         },
         {
           id: crypto.randomUUID(),
           name: 'Full Release',
+          profileType: 'plugin',
           platforms: ['Win64', 'Linux', 'Mac', 'Android', 'IOS'],
           description: 'All supported platforms',
         },
@@ -286,15 +299,6 @@ async function saveConfigInternal(config: AppConfig): Promise<void> {
   }
 }
 
-function getTrayIconPath() {
-  const name = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
-
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'assets', name);
-  }
-  return path.join(__dirname, '..', '..', 'assets', name);
-}
-
 const createTray = async () => {
   const config = await loadConfig();
   
@@ -302,13 +306,12 @@ const createTray = async () => {
     return;
   }
 
-  const iconPath = getTrayIconPath();
+  const iconPath = path.join(__dirname, '../../assets/icon.png');
   let icon: Electron.NativeImage;
   
   try {
     icon = nativeImage.createFromPath(iconPath);
     if (icon.isEmpty()) {
-      console.warn('Tray icon is empty, check file/format. Path:', iconPath);
       icon = nativeImage.createEmpty();
     }
   } catch {
@@ -351,27 +354,25 @@ const createTray = async () => {
   });
 };
 
-function getWindowIconPath() {
-  const base =
-    app.isPackaged ? process.resourcesPath : path.join(__dirname, '..', '..');
-
-  if (process.platform === 'win32') {
-    return path.join(base, 'assets', 'icon.ico');
-  }
-
-  if (process.platform === 'darwin') {
-    return path.join(base, 'assets', 'icon.icns');
-  }
-
-  return path.join(base, 'assets', 'icon.png');
-}
-
 const createWindow = () => {
+  const iconPath = path.join(__dirname, '../../assets/icon.png');
+  let windowIcon: Electron.NativeImage;
+  
+  try {
+    windowIcon = nativeImage.createFromPath(iconPath);
+    if (windowIcon.isEmpty()) {
+      windowIcon = nativeImage.createEmpty();
+    }
+  } catch (error) {
+    windowIcon = nativeImage.createEmpty();
+  }
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 1000,
     minWidth: 900,
     minHeight: 600,
+    icon: windowIcon,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
@@ -380,7 +381,6 @@ const createWindow = () => {
     backgroundColor: '#1a1a1a',
     show: false,
     autoHideMenuBar: true,
-    icon: getWindowIconPath(),
   });
 
   mainWindow.once('ready-to-show', () => {

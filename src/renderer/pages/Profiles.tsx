@@ -19,16 +19,24 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
   const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    profileType: 'plugin' as 'plugin' | 'project',
     platforms: ['Win64'],
+    targetConfig: 'Development' as 'Development' | 'Shipping',
     description: '',
+    preBuildScript: '',
+    postBuildScript: '',
   });
 
   const startAddProfile = () => {
     setEditingProfile(null);
     setFormData({
       name: '',
+      profileType: 'plugin',
       platforms: ['Win64'],
+      targetConfig: 'Development',
       description: '',
+      preBuildScript: '',
+      postBuildScript: '',
     });
     setShowProfileForm(true);
   };
@@ -37,19 +45,49 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
     setEditingProfile(profile);
     setFormData({
       name: profile.name,
+      profileType: profile.profileType || 'plugin',
       platforms: profile.platforms,
+      targetConfig: profile.targetConfig || 'Development',
       description: profile.description || '',
+      preBuildScript: profile.preBuildScript || '',
+      postBuildScript: profile.postBuildScript || '',
     });
     setShowProfileForm(true);
   };
 
   const togglePlatform = (platformId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      platforms: prev.platforms.includes(platformId)
-        ? prev.platforms.filter(p => p !== platformId)
-        : [...prev.platforms, platformId],
-    }));
+    setFormData(prev => {
+      if (prev.profileType === 'project') {
+        return { ...prev, platforms: [platformId] };
+      }
+      
+      return {
+        ...prev,
+        platforms: prev.platforms.includes(platformId)
+          ? prev.platforms.filter(p => p !== platformId)
+          : [...prev.platforms, platformId],
+      };
+    });
+  };
+
+  const handleSelectPreBuildScript = async () => {
+    const filePath = await window.electronAPI.selectFile([
+      { name: 'Script Files', extensions: ['bat', 'cmd', 'ps1', 'sh', 'bash'] },
+      { name: 'All Files', extensions: ['*'] },
+    ]);
+    if (filePath) {
+      setFormData(prev => ({ ...prev, preBuildScript: filePath }));
+    }
+  };
+
+  const handleSelectPostBuildScript = async () => {
+    const filePath = await window.electronAPI.selectFile([
+      { name: 'Script Files', extensions: ['bat', 'cmd', 'ps1', 'sh', 'bash'] },
+      { name: 'All Files', extensions: ['*'] },
+    ]);
+    if (filePath) {
+      setFormData(prev => ({ ...prev, postBuildScript: filePath }));
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -61,8 +99,12 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
     const profileData: BuildProfile = {
       id: editingProfile?.id || crypto.randomUUID(),
       name: formData.name.trim(),
+      profileType: formData.profileType,
       platforms: formData.platforms,
+      targetConfig: formData.profileType === 'project' ? formData.targetConfig : undefined,
       description: formData.description.trim() || undefined,
+      preBuildScript: formData.preBuildScript || undefined,
+      postBuildScript: formData.postBuildScript || undefined,
     };
 
     const updatedProfiles = editingProfile
@@ -75,6 +117,24 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
     });
 
     setShowProfileForm(false);
+  };
+
+  const handleDuplicateProfile = async (profile: BuildProfile) => {
+    const duplicatedProfile: BuildProfile = {
+      id: crypto.randomUUID(),
+      name: `${profile.name} (Copy)`,
+      profileType: profile.profileType || 'plugin',
+      platforms: [...profile.platforms],
+      targetConfig: profile.targetConfig,
+      description: profile.description,
+      preBuildScript: profile.preBuildScript,
+      postBuildScript: profile.postBuildScript,
+    };
+
+    await saveConfig({
+      ...config,
+      profiles: [...config.profiles, duplicatedProfile],
+    });
   };
 
   const handleDeleteProfile = async (profileId: string) => {
@@ -137,6 +197,12 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                     <div className="project-header">
                       <div className="project-info">
                         <h3>{profile.name}</h3>
+                        <span className="project-badge">
+                          <span className="material-symbols-outlined" style={{ fontSize: '0.875rem' }}>
+                            {(profile.profileType || 'plugin') === 'project' ? 'sports_esports' : 'extension'}
+                          </span>
+                          {(profile.profileType || 'plugin') === 'project' ? 'Project Profile' : 'Plugin Profile'}
+                        </span>
                         {profile.description && (
                           <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                             {profile.description}
@@ -154,8 +220,23 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                               {platform}
                             </span>
                           ))}
+                          {profile.profileType === 'project' && profile.targetConfig && (
+                            <span className="platform-chip" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                              {profile.targetConfig}
+                            </span>
+                          )}
                         </div>
                       </div>
+                      
+                      {(profile.preBuildScript || profile.postBuildScript) && (
+                        <div className="project-detail">
+                          <span className="material-symbols-outlined">code</span>
+                          <span style={{ fontSize: '0.8125rem' }}>
+                            {profile.preBuildScript && profile.postBuildScript ? 'Pre & Post Scripts' : 
+                             profile.preBuildScript ? 'Pre-Build Script' : 'Post-Build Script'}
+                          </span>
+                        </div>
+                      )}
                       
                       {usedByProjects.length > 0 && (
                         <div className="project-detail">
@@ -171,6 +252,10 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                       <button className="btn btn-secondary" onClick={() => startEditProfile(profile)}>
                         <span className="material-symbols-outlined">edit</span>
                         Edit
+                      </button>
+                      <button className="btn btn-secondary" onClick={() => handleDuplicateProfile(profile)}>
+                        <span className="material-symbols-outlined">content_copy</span>
+                        Duplicate
                       </button>
                       <button className="btn btn-text" onClick={() => handleDeleteProfile(profile.id)}>
                         <span className="material-symbols-outlined">delete</span>
@@ -208,8 +293,32 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   className="form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Quick Test"
+                  placeholder="Desktop Release"
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Profile Type *</label>
+                <div className="checkbox-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="profileType"
+                      checked={formData.profileType === 'plugin'}
+                      onChange={() => setFormData({ ...formData, profileType: 'plugin', platforms: formData.platforms.length === 1 ? ['Win64'] : formData.platforms })}
+                    />
+                    <span>Plugin Profile</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="profileType"
+                      checked={formData.profileType === 'project'}
+                      onChange={() => setFormData({ ...formData, profileType: 'project', platforms: [formData.platforms[0] || 'Win64'] })}
+                    />
+                    <span>Project Profile</span>
+                  </label>
+                </div>
               </div>
 
               <div className="form-group">
@@ -219,17 +328,23 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   className="form-input"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Fast build for testing"
+                  placeholder="Build configuration for..."
                 />
               </div>
 
               <div className="form-group">
-                <label>Target Platforms *</label>
+                <label>Target Platform{formData.profileType === 'plugin' ? 's' : ''} *</label>
+                {formData.profileType === 'project' && (
+                  <p className="help-text" style={{ marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+                    Project profiles build one platform at a time.
+                  </p>
+                )}
                 <div className="checkbox-group">
                   {PLATFORMS.map(platform => (
                     <label key={platform.id} className="checkbox-label">
                       <input
-                        type="checkbox"
+                        type={'checkbox'}
+                        name={formData.profileType === 'project' ? 'platform' : undefined}
                         checked={formData.platforms.includes(platform.id)}
                         onChange={() => togglePlatform(platform.id)}
                       />
@@ -237,6 +352,74 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {formData.profileType === 'project' && (
+                <div className="form-group">
+                  <label>Build Configuration *</label>
+                  <div className="checkbox-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="targetConfig"
+                        checked={formData.targetConfig === 'Development'}
+                        onChange={() => setFormData({ ...formData, targetConfig: 'Development' })}
+                      />
+                      <span>Development (Debug)</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="targetConfig"
+                        checked={formData.targetConfig === 'Shipping'}
+                        onChange={() => setFormData({ ...formData, targetConfig: 'Shipping' })}
+                      />
+                      <span>Shipping (Release)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Pre-Build Script (Optional)</label>
+                <div className="input-with-button">
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.preBuildScript}
+                    readOnly
+                    placeholder="Select script to run before build (.bat, .sh, .ps1)"
+                    style={{ fontFamily: 'Consolas, monospace', fontSize: '0.8125rem' }}
+                  />
+                  <button className="btn btn-secondary" onClick={handleSelectPreBuildScript}>
+                    <span className="material-symbols-outlined">folder_open</span>
+                    Browse
+                  </button>
+                </div>
+                <p className="help-text">
+                  Runs before build starts. Use for cleanup, preparation, etc.
+                </p>
+              </div>
+
+              <div className="form-group">
+                <label>Post-Build Script (Optional)</label>
+                <div className="input-with-button">
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.postBuildScript}
+                    readOnly
+                    placeholder="Select script to run after build (.bat, .sh, .ps1)"
+                    style={{ fontFamily: 'Consolas, monospace', fontSize: '0.8125rem' }}
+                  />
+                  <button className="btn btn-secondary" onClick={handleSelectPostBuildScript}>
+                    <span className="material-symbols-outlined">folder_open</span>
+                    Browse
+                  </button>
+                </div>
+                <p className="help-text">
+                  Runs after successful build. Use for packaging, archiving, etc.
+                </p>
               </div>
             </div>
 

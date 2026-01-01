@@ -41,8 +41,12 @@ export interface UserSettings {
 export interface BuildProfile {
   id: string;
   name: string;
-  platforms: string[];
   description?: string;
+  profileType: 'plugin' | 'project';
+  platforms: string[];
+  targetConfig?: 'Development' | 'Shipping';
+  preBuildScript?: string;
+  postBuildScript?: string;
 }
 
 export interface BuildAnalytics {
