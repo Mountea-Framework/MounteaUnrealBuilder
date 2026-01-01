@@ -384,7 +384,7 @@ Track build performance over time:
 
 ### Clone Repository
 ```bash
-git clone https://github.com/yourusername/unreal-builder.git
+git clone https://github.com/Mountea-Framework/MounteaUnrealBuilder.git
 cd unreal-builder
 ```
 
@@ -459,11 +459,11 @@ For issues, questions, or feature requests:
 
 ## License
 
-This project is licensed under the ISC License. See LICENSE file for details.
+This project is licensed under the GPL-2.0 license. See LICENSE file for details.
 
 ## Acknowledgments
 
-Built with Unreal Engine developer workflows in mind. Special thanks to the Unreal Engine community for feedback and testing.
+Built with Unreal Engine developer workflows in mind. Special thanks to the Unreal Engine community for feedback and testing and Epic Games for not creating anything better so I had to do it myself.
 
 ## Version History
 
