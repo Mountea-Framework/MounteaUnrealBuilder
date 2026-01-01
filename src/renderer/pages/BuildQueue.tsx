@@ -3,6 +3,7 @@ import { AppConfig, BuildStage } from '../../shared/types';
 
 interface Props {
   config: AppConfig;
+  saveConfig: (config: AppConfig) => Promise<void>;
 }
 
 const BUILD_STAGES: BuildStage[] = ['setup', 'editor', 'development', 'shipping'];
@@ -16,7 +17,7 @@ const STAGE_LABELS = {
   complete: 'Complete',
 };
 
-const BuildQueue: React.FC<Props> = ({ config }) => {
+const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
   const [buildLogs, setBuildLogs] = useState<Record<string, string>>({});
   const [expandedBuild, setExpandedBuild] = useState<string | null>(null);
   const [autoScroll, setAutoScroll] = useState(true);
@@ -111,13 +112,10 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
   const handleClearHistory = async () => {
     if (!confirm('Clear all build history? This cannot be undone.')) return;
     
-    const updatedConfig = {
+    await saveConfig({
       ...config,
       buildHistory: config.buildHistory.filter(b => b.status === 'building' || b.status === 'queued'),
-    };
-    
-    await window.electronAPI.saveConfig(updatedConfig);
-    window.location.reload();
+    });
   };
 
   const handleOpenOutputFolder = async (projectId: string) => {

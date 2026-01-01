@@ -157,7 +157,7 @@ const App: React.FC = () => {
           <EngineConfig config={config} saveConfig={saveConfig} />
         )}
         {currentPage === 'queue' && (
-          <BuildQueue config={config} />
+          <BuildQueue config={config} saveConfig={saveConfig} />
         )}
         {currentPage === 'profiles' && (
           <Profiles config={config} saveConfig={saveConfig} />
