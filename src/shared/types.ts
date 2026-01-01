@@ -10,13 +10,15 @@ export interface ProjectConfig {
   id: string;
   name: string;
   pluginPath: string;
+  projectType: 'plugin' | 'project';
   engineId: string;
   targetPlatforms: string[];
+  targetConfig?: 'Development' | 'Shipping';
   outputPath: string;
   defaultProfileId?: string;
 }
 
-export type BuildStage = 'queued' | 'setup' | 'editor' | 'development' | 'shipping' | 'complete';
+export type BuildStage = 'queued' | 'setup' | 'editor' | 'development' | 'shipping' | 'cook' | 'build' | 'stage' | 'package' | 'complete';
 
 export interface BuildRecord {
   id: string;

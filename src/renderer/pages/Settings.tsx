@@ -291,10 +291,10 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
               </div>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.6', marginBottom: '0.75rem' }}>
-              A desktop application for building Unreal Engine plugins across multiple engine versions and platforms.
+              A desktop application for building Unreal Engine plugins and projects across multiple engine versions and platforms.
             </p>
             <p className="help-text" style={{ marginTop: '0' }}>
-              Built with Electron, React, and TypeScript
+             Made by Dominik Morse.
             </p>
           </div>
         </div>

@@ -30,20 +30,47 @@ export class BuildExecutor {
       'RunUAT.bat'
     );
 
-    const outPath = `${project.outputPath}/${project.name}`;
+    const outPath = path.join(project.outputPath, project.name);
 
-    const args = [
-      'BuildPlugin',
-      '-Rocket',
-      `-Plugin="${project.pluginPath}"`,
-      `-TargetPlatforms=${project.targetPlatforms.join('+')}`,
-      `-Package="${outPath}"`,
-    ];
+    let args: string[];
+    
+    if (project.projectType === 'project') {
+      const platform = project.targetPlatforms[0];
+      const config = project.targetConfig || 'Development';
+      
+      args = [
+        'BuildCookRun',
+        `-project="${project.pluginPath}"`,
+        `-platform=${platform}`,
+        `-clientconfig=${config}`,
+        '-cook',
+        '-build',
+        '-stage',
+        '-pak',
+        '-archive',
+        `-archivedirectory="${outPath}"`,
+        '-noP4',
+      ];
+    } else {
+      args = [
+        'BuildPlugin',
+        '-Rocket',
+        `-Plugin="${project.pluginPath}"`,
+        `-TargetPlatforms=${project.targetPlatforms.join('+')}`,
+        `-Package="${outPath}"`,
+      ];
+    }
 
     this.onLog(buildId, `Starting build: ${project.name}\n`);
     this.onLog(buildId, `Engine: ${engine.version} (${engine.path})\n`);
-    this.onLog(buildId, `Platforms: ${project.targetPlatforms.join(', ')}\n`);
-    this.onLog(buildId, `Output: ${project.outputPath}\n`);
+    this.onLog(buildId, `Type: ${project.projectType === 'project' ? 'Project' : 'Plugin'}\n`);
+    if (project.projectType === 'project') {
+      this.onLog(buildId, `Platform: ${project.targetPlatforms[0]}\n`);
+      this.onLog(buildId, `Config: ${project.targetConfig || 'Development'}\n`);
+    } else {
+      this.onLog(buildId, `Platforms: ${project.targetPlatforms.join(', ')}\n`);
+    }
+    this.onLog(buildId, `Output: ${outPath}\n`);
     this.onLog(buildId, `\n${'='.repeat(80)}\n\n`);
 
     this.currentProcess = spawn(`"${runatPath}"`, args, {

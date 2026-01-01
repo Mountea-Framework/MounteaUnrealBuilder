@@ -286,6 +286,15 @@ async function saveConfigInternal(config: AppConfig): Promise<void> {
   }
 }
 
+function getTrayIconPath() {
+  const name = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'assets', name);
+  }
+  return path.join(__dirname, '..', '..', 'assets', name);
+}
+
 const createTray = async () => {
   const config = await loadConfig();
   
@@ -293,12 +302,13 @@ const createTray = async () => {
     return;
   }
 
-  const iconPath = path.join(__dirname, '../../assets/icon.png');
+  const iconPath = getTrayIconPath();
   let icon: Electron.NativeImage;
   
   try {
     icon = nativeImage.createFromPath(iconPath);
     if (icon.isEmpty()) {
+      console.warn('Tray icon is empty, check file/format. Path:', iconPath);
       icon = nativeImage.createEmpty();
     }
   } catch {
@@ -341,6 +351,21 @@ const createTray = async () => {
   });
 };
 
+function getWindowIconPath() {
+  const base =
+    app.isPackaged ? process.resourcesPath : path.join(__dirname, '..', '..');
+
+  if (process.platform === 'win32') {
+    return path.join(base, 'assets', 'icon.ico');
+  }
+
+  if (process.platform === 'darwin') {
+    return path.join(base, 'assets', 'icon.icns');
+  }
+
+  return path.join(base, 'assets', 'icon.png');
+}
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -355,6 +380,7 @@ const createWindow = () => {
     backgroundColor: '#1a1a1a',
     show: false,
     autoHideMenuBar: true,
+    icon: getWindowIconPath(),
   });
 
   mainWindow.once('ready-to-show', () => {

@@ -21,8 +21,10 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
   const [formData, setFormData] = useState({
     name: '',
     pluginPath: '',
+    projectType: 'plugin' as 'plugin' | 'project',
     engineId: '',
     targetPlatforms: ['Win64'],
+    targetConfig: 'Development' as 'Development' | 'Shipping',
     outputPath: '',
     defaultProfileId: '',
   });
@@ -54,8 +56,12 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
     await handleBuild(projectId);
   };
 
-  const handleOpenOutputFolder = async (outputPath: string) => {
-    await window.electronAPI.openFolder(outputPath);
+  const handleOpenOutputFolder = async (projectId: string) => {
+    const project = config.projects.find(p => p.id === projectId);
+    if (project) {
+      const outPath = `${project.outputPath}/${project.name}`;
+      await window.electronAPI.openFolder(outPath);
+    }
   };
 
   const startAddProject = () => {
@@ -63,8 +69,10 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
     setFormData({
       name: '',
       pluginPath: '',
+      projectType: 'plugin',
       engineId: config.engines[0]?.id || '',
       targetPlatforms: ['Win64'],
+      targetConfig: 'Development',
       outputPath: '',
       defaultProfileId: '',
     });
@@ -76,8 +84,10 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
     setFormData({
       name: project.name,
       pluginPath: project.pluginPath,
+      projectType: project.projectType || 'plugin',
       engineId: project.engineId,
       targetPlatforms: project.targetPlatforms,
+      targetConfig: project.targetConfig || 'Development',
       outputPath: project.outputPath,
       defaultProfileId: project.defaultProfileId || '',
     });
@@ -87,13 +97,20 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
   const handleSelectPlugin = async () => {
     const filePath = await window.electronAPI.selectFile([
       { name: 'Unreal Plugin', extensions: ['uplugin'] },
+      { name: 'Unreal Project', extensions: ['uproject'] },
     ]);
 
     if (filePath) {
+      const fileName = filePath.split(/[\\/]/).pop() || '';
+      const projectType = fileName.endsWith('.uproject') ? 'project' : 'plugin';
+      const nameWithoutExt = fileName.replace(/\.(uplugin|uproject)$/, '');
+      
       setFormData(prev => ({
         ...prev,
         pluginPath: filePath,
-        name: prev.name || filePath.split(/[\\/]/).pop()?.replace('.uplugin', '') || '',
+        projectType,
+        name: prev.name || nameWithoutExt,
+        targetPlatforms: projectType === 'project' ? [prev.targetPlatforms[0] || 'Win64'] : prev.targetPlatforms,
       }));
     }
   };
@@ -106,12 +123,18 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
   };
 
   const togglePlatform = (platformId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      targetPlatforms: prev.targetPlatforms.includes(platformId)
-        ? prev.targetPlatforms.filter(p => p !== platformId)
-        : [...prev.targetPlatforms, platformId],
-    }));
+    setFormData(prev => {
+      if (prev.projectType === 'project') {
+        return { ...prev, targetPlatforms: [platformId] };
+      }
+      
+      return {
+        ...prev,
+        targetPlatforms: prev.targetPlatforms.includes(platformId)
+          ? prev.targetPlatforms.filter(p => p !== platformId)
+          : [...prev.targetPlatforms, platformId],
+      };
+    });
   };
 
   const handleSaveProject = async () => {
@@ -124,8 +147,10 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
       id: editingProject?.id || crypto.randomUUID(),
       name: formData.name.trim(),
       pluginPath: formData.pluginPath,
+      projectType: formData.projectType,
       engineId: formData.engineId,
       targetPlatforms: formData.targetPlatforms,
+      targetConfig: formData.projectType === 'project' ? formData.targetConfig : undefined,
       outputPath: formData.outputPath,
       defaultProfileId: formData.defaultProfileId || undefined,
     };
@@ -193,7 +218,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                     <h3>{project.name}</h3>
                     <span className="project-badge">
                       <span className="material-symbols-outlined" style={{ fontSize: '0.875rem' }}>
-                        extension
+                        {(project.projectType || 'plugin') === 'project' ? 'sports_esports' : 'extension'}
                       </span>
                       {getEngineName(project.engineId)}
                     </span>
@@ -221,6 +246,11 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                           {platform}
                         </span>
                       ))}
+                      {project.projectType === 'project' && project.targetConfig && (
+                        <span className="platform-chip" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                          {project.targetConfig}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -249,7 +279,7 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                   </button>
                   <button
                     className="btn btn-text"
-                    onClick={() =>handleOpenOutputFolder(`${project.outputPath}/${project.name}`)}
+                    onClick={() => handleOpenOutputFolder(project.id)}
                     title="Open output folder"
                   >
                     <span className="material-symbols-outlined">folder_open</span>
@@ -297,6 +327,30 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
 
             <div className="form-body">
               <div className="form-group">
+                <label>Project Type *</label>
+                <div className="checkbox-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="projectType"
+                      checked={formData.projectType === 'plugin'}
+                      onChange={() => setFormData({ ...formData, projectType: 'plugin', targetPlatforms: formData.targetPlatforms.length === 1 ? ['Win64'] : formData.targetPlatforms })}
+                    />
+                    <span>🧩 Plugin (.uplugin)</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="projectType"
+                      checked={formData.projectType === 'project'}
+                      onChange={() => setFormData({ ...formData, projectType: 'project', targetPlatforms: [formData.targetPlatforms[0] || 'Win64'] })}
+                    />
+                    <span>🎮 Project (.uproject)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="form-group">
                 <label>Project Name *</label>
                 <input
                   type="text"
@@ -308,14 +362,16 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
               </div>
 
               <div className="form-group">
-                <label>Plugin File (.uplugin) *</label>
+                <label>
+                  {formData.projectType === 'project' ? 'Project File (.uproject)' : 'Plugin File (.uplugin)'} *
+                </label>
                 <div className="input-with-button">
                   <input
                     type="text"
                     className="form-input"
                     value={formData.pluginPath}
                     readOnly
-                    placeholder="Select .uplugin file"
+                    placeholder={formData.projectType === 'project' ? 'Select .uproject file' : 'Select .uplugin file'}
                     style={{ fontFamily: 'Consolas, monospace', fontSize: '0.8125rem' }}
                   />
                   <button className="btn btn-secondary" onClick={handleSelectPlugin}>
@@ -341,12 +397,18 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
               </div>
 
               <div className="form-group">
-                <label>Target Platforms *</label>
+                <label>Target Platform{formData.projectType === 'plugin' ? 's' : ''} *</label>
+                {formData.projectType === 'project' && (
+                  <p className="help-text" style={{ marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+                    Projects build one platform at a time. Queue multiple builds for multiple platforms.
+                  </p>
+                )}
                 <div className="checkbox-group">
                   {PLATFORMS.map(platform => (
                     <label key={platform.id} className="checkbox-label">
                       <input
-                        type="checkbox"
+                        type={'checkbox'}
+                        name={formData.projectType === 'project' ? 'platform' : undefined}
                         checked={formData.targetPlatforms.includes(platform.id)}
                         onChange={() => togglePlatform(platform.id)}
                       />
@@ -355,6 +417,32 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
                   ))}
                 </div>
               </div>
+
+              {formData.projectType === 'project' && (
+                <div className="form-group">
+                  <label>Build Configuration *</label>
+                  <div className="checkbox-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="targetConfig"
+                        checked={formData.targetConfig === 'Development'}
+                        onChange={() => setFormData({ ...formData, targetConfig: 'Development' })}
+                      />
+                      <span>Development (Debug)</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="targetConfig"
+                        checked={formData.targetConfig === 'Shipping'}
+                        onChange={() => setFormData({ ...formData, targetConfig: 'Shipping' })}
+                      />
+                      <span>Shipping (Release)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
 
               {config.profiles.length > 0 && (
                 <div className="form-group">

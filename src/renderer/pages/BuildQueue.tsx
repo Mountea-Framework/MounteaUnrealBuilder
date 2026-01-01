@@ -6,13 +6,18 @@ interface Props {
   saveConfig: (config: AppConfig) => Promise<void>;
 }
 
-const BUILD_STAGES: BuildStage[] = ['setup', 'editor', 'development', 'shipping'];
+const PLUGIN_STAGES: BuildStage[] = ['setup', 'editor', 'development', 'shipping'];
+const PROJECT_STAGES: BuildStage[] = ['setup', 'cook', 'build', 'stage', 'package'];
 
-const STAGE_LABELS = {
+const STAGE_LABELS: Record<BuildStage, string> = {
   setup: 'Setup',
   editor: 'Editor',
   development: 'Development',
   shipping: 'Shipping',
+  cook: 'Cook',
+  build: 'Build',
+  stage: 'Stage',
+  package: 'Package',
   queued: 'Queued',
   complete: 'Complete',
 };
@@ -42,7 +47,11 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
         const updatedLog = (prev[buildId] || '') + log;
         
         if (buildId === activeBuildId) {
-          const detectedStage = getCurrentStageIndex(updatedLog);
+          const build = config.buildHistory.find(b => b.id === buildId);
+          const project = build ? config.projects.find(p => p.id === build.projectId) : null;
+          const projectType = project?.projectType || 'plugin';
+          
+          const detectedStage = getCurrentStageIndex(updatedLog, projectType);
           if (detectedStage > currentStageIndex) {
             setCurrentStageIndex(detectedStage);
           }
@@ -132,23 +141,32 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const getCurrentStageIndex = (log: string): number => {
+  const getCurrentStageIndex = (log: string, projectType: 'plugin' | 'project'): number => {
     const logLower = log.toLowerCase();
     
-    if (logLower.includes('building unrealgame') && logLower.includes('shipping')) return 3;
-    if (logLower.includes('manifest-unrealgame-win64-shipping')) return 3;
-    if (logLower.includes('uba-unrealgame-win64-shipping')) return 3;
-    
-    if (logLower.includes('building unrealgame') && logLower.includes('development')) return 2;
-    if (logLower.includes('manifest-unrealgame-win64-development')) return 2;
-    if (logLower.includes('uba-unrealgame-win64-development')) return 2;
-    
-    if (logLower.includes('building unrealeditor')) return 1;
-    if (logLower.includes('manifest-unrealeditor-win64-development')) return 1;
-    if (logLower.includes('uba-unrealeditor-win64-development')) return 1;
-    
-    if (logLower.includes('running automationtool') || logLower.includes('runuat')) return 0;
-    if (logLower.includes('initializing script modules')) return 0;
+    if (projectType === 'project') {
+      if (logLower.includes('creating pak') || logLower.includes('paking')) return 4;
+      if (logLower.includes('staging files') || logLower.includes('stage:')) return 3;
+      if (logLower.includes('building') && (logLower.includes('win64') || logLower.includes('linux') || logLower.includes('mac'))) return 2;
+      if (logLower.includes('cooking content') || logLower.includes('cook:')) return 1;
+      if (logLower.includes('running automationtool') || logLower.includes('runuat')) return 0;
+      if (logLower.includes('initializing script modules')) return 0;
+    } else {
+      if (logLower.includes('building unrealgame') && logLower.includes('shipping')) return 3;
+      if (logLower.includes('manifest-unrealgame-win64-shipping')) return 3;
+      if (logLower.includes('uba-unrealgame-win64-shipping')) return 3;
+      
+      if (logLower.includes('building unrealgame') && logLower.includes('development')) return 2;
+      if (logLower.includes('manifest-unrealgame-win64-development')) return 2;
+      if (logLower.includes('uba-unrealgame-win64-development')) return 2;
+      
+      if (logLower.includes('building unrealeditor')) return 1;
+      if (logLower.includes('manifest-unrealeditor-win64-development')) return 1;
+      if (logLower.includes('uba-unrealeditor-win64-development')) return 1;
+      
+      if (logLower.includes('running automationtool') || logLower.includes('runuat')) return 0;
+      if (logLower.includes('initializing script modules')) return 0;
+    }
     
     return -1;
   };
@@ -178,7 +196,9 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
       
       const currentLog = buildLogs[activeBuild.id] || '';
       if (currentLog) {
-        const detectedStage = getCurrentStageIndex(currentLog);
+        const project = config.projects.find(p => p.id === activeBuild.projectId);
+        const projectType = project?.projectType || 'plugin';
+        const detectedStage = getCurrentStageIndex(currentLog, projectType);
         if (detectedStage >= 0) {
           setCurrentStageIndex(detectedStage);
         }
@@ -187,7 +207,7 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
       setActiveBuildId(null);
       setCurrentStageIndex(-1);
     }
-  }, [activeBuild, activeBuildId, buildLogs]);
+  }, [activeBuild, activeBuildId, buildLogs, config.projects]);
 
   if (!activeBuild && queuedBuilds.length === 0 && completedBuilds.length === 0) {
     return (
@@ -219,7 +239,11 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
       </header>
 
       <div className="page-content">
-        {activeBuild && (
+        {activeBuild && (() => {
+          const project = config.projects.find(p => p.id === activeBuild.projectId);
+          const BUILD_STAGES = project?.projectType === 'project' ? PROJECT_STAGES : PLUGIN_STAGES;
+          
+          return (
           <div className="section">
             <div className="build-pipeline-container">
               <div className="build-stats-row">
@@ -237,14 +261,26 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
                   <h3>Build Progress</h3>
                   <div className="pipeline-status">
                     {currentStageIndex >= 0 && currentStageIndex < BUILD_STAGES.length && (
-                      <span className="pipeline-status">
+                      <span>
                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>
                           sync
                         </span>
-                        {currentStageIndex === 0 && 'Initializing...'}
-                        {currentStageIndex === 1 && 'Building Editor...'}
-                        {currentStageIndex === 2 && 'Building Development...'}
-                        {currentStageIndex === 3 && 'Building Shipping...'}
+                        {project?.projectType === 'project' ? (
+                          <>
+                            {currentStageIndex === 0 && 'Initializing...'}
+                            {currentStageIndex === 1 && 'Cooking Content...'}
+                            {currentStageIndex === 2 && 'Building...'}
+                            {currentStageIndex === 3 && 'Staging...'}
+                            {currentStageIndex === 4 && 'Packaging...'}
+                          </>
+                        ) : (
+                          <>
+                            {currentStageIndex === 0 && 'Initializing...'}
+                            {currentStageIndex === 1 && 'Building Editor...'}
+                            {currentStageIndex === 2 && 'Building Development...'}
+                            {currentStageIndex === 3 && 'Building Shipping...'}
+                          </>
+                        )}
                       </span>
                     )}
                   </div>
@@ -311,7 +347,8 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {queuedBuilds.length > 0 && (
           <div className="section">
