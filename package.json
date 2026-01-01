@@ -1,7 +1,7 @@
 {
   "name": "unreal-builder",
-  "version": "1.0.0",
-  "description": "Desktop app for building Unreal Engine plugins",
+  "version": "1.0.1",
+  "description": "Friendly Unreal Engine Project Builder",
   "main": "dist/main/main.js",
   "scripts": {
     "start": "npm run build:dev && cross-env NODE_ENV=development electron .",
@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "com.unrealbuilder.app",
-    "productName": "Unreal Builder",
+    "productName": "Mountea Unreal Builder",
     "directories": {
       "output": "release"
     },
@@ -47,9 +47,9 @@
       "createStartMenuShortcut": true
     }
   },
-  "keywords": ["unreal", "engine", "builder", "electron"],
+  "keywords": ["unreal", "engine", "builder", "mountea"],
   "author": "Dominik Morse | Mountea Framework",
-  "license": "ISC",
+  "license": "GPL-2.0 license",
   "devDependencies": {
     "@types/node": "^25.0.3",
     "@types/react": "^19.2.7",
