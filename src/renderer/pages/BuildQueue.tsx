@@ -117,6 +117,7 @@ const BuildQueue: React.FC<Props> = ({ config }) => {
     };
     
     await window.electronAPI.saveConfig(updatedConfig);
+    window.location.reload();
   };
 
   const handleOpenOutputFolder = async (projectId: string) => {
