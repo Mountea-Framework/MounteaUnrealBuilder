@@ -95,10 +95,11 @@ const Dashboard: React.FC<Props> = ({ config, saveConfig }) => {
   };
 
   const handleSelectPlugin = async () => {
-    const filePath = await window.electronAPI.selectFile([
-      { name: 'Unreal Plugin', extensions: ['uplugin'] },
-      { name: 'Unreal Project', extensions: ['uproject'] },
-    ]);
+    const filters = formData.projectType === 'project'
+      ? [{ name: 'Unreal Project', extensions: ['uproject'] }]
+      : [{ name: 'Unreal Plugin', extensions: ['uplugin'] }];
+    
+    const filePath = await window.electronAPI.selectFile(filters);
 
     if (filePath) {
       const fileName = filePath.split(/[\\/]/).pop() || '';

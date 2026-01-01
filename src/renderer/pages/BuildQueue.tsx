@@ -261,7 +261,7 @@ const BuildQueue: React.FC<Props> = ({ config, saveConfig }) => {
                   <h3>Build Progress</h3>
                   <div className="pipeline-status">
                     {currentStageIndex >= 0 && currentStageIndex < BUILD_STAGES.length && (
-                      <span>
+                      <span className="pipeline-status">
                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>
                           sync
                         </span>
