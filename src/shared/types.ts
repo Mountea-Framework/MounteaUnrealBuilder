@@ -81,6 +81,7 @@ export interface IPC {
   selectFolder: () => Promise<string | null>;
   exportLogs: (buildId: string, log: string) => Promise<void>;
   openFolder: (folderPath: string) => Promise<void>;
+  openExternal: (url: string) => Promise<void>;
 }
 
 declare global {

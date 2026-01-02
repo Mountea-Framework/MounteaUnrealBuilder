@@ -464,6 +464,11 @@ ipcMain.handle('select-folder', async () => {
   return result.canceled ? null : result.filePaths[0];
 });
 
+ipcMain.handle('open-external', async (_event, url: string) => {
+  const { shell } = require('electron');
+  await shell.openExternal(url);
+});
+
 ipcMain.handle('start-build', async (_event, projectId: string) => {
   try {
     const config = await loadConfig();

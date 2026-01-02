@@ -5,9 +5,10 @@ import EngineConfig from './pages/EngineConfig';
 import BuildQueue from './pages/BuildQueue';
 import Settings from './pages/Settings';
 import Profiles from './pages/Profiles';
+import Support from './pages/Support';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
-type Page = 'dashboard' | 'engines' | 'queue' | 'profiles' | 'settings';
+type Page = 'dashboard' | 'engines' | 'queue' | 'profiles' | 'settings' | 'support';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -139,6 +140,13 @@ const App: React.FC = () => {
         <div className="nav-menu-bottom">
           <ul className="nav-menu">
             <li
+              className={currentPage === 'support' ? 'active' : ''}
+              onClick={() => setCurrentPage('support')}
+            >
+              <span className="material-symbols-outlined icon">help</span>
+              Support
+            </li>
+            <li
               className={currentPage === 'settings' ? 'active' : ''}
               onClick={() => setCurrentPage('settings')}
             >
@@ -161,6 +169,9 @@ const App: React.FC = () => {
         )}
         {currentPage === 'profiles' && (
           <Profiles config={config} saveConfig={saveConfig} />
+        )}
+        {currentPage === 'support' && (
+          <Support />
         )}
         {currentPage === 'settings' && (
           <Settings config={config} saveConfig={saveConfig} />
