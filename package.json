@@ -1,6 +1,6 @@
 {
   "name": "unreal-builder",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Friendly Unreal Engine Project Builder",
   "main": "dist/main/main.js",
   "scripts": {

@@ -436,13 +436,7 @@ ipcMain.handle('save-config', async (_event, config: AppConfig) => {
 });
 
 ipcMain.handle('validate-engine-path', async (_event, enginePath: string) => {
-  try {
-    const runatPath = path.join(enginePath, 'Engine', 'Build', 'BatchFiles', 'RunUAT.bat');
-    await fs.access(runatPath);
-    return true;
-  } catch {
-    return false;
-  }
+  return await validateEngine(enginePath);
 });
 
 ipcMain.handle('scan-engines', async () => {

@@ -6,6 +6,48 @@ import { EngineInstallation } from '../shared/types';
 
 const execAsync = promisify(exec);
 
+function getUATScriptName(): string {
+  switch (process.platform) {
+    case 'win32':
+      return 'RunUAT.bat';
+    case 'darwin':
+      return 'RunUAT.sh';
+    case 'linux':
+      return 'RunUAT.sh';
+    default:
+      return 'RunUAT.sh';
+  }
+}
+
+function getCommonEnginePaths(): string[] {
+  switch (process.platform) {
+    case 'win32':
+      return [
+        'C:\\Program Files\\Epic Games',
+        'C:\\Epic Games',
+        'C:\\UnrealEngine',
+        'D:\\Program Files\\Epic Games',
+        'D:\\Epic Games',
+        'D:\\UnrealEngine',
+        'E:\\Epic Games',
+        'E:\\UnrealEngine',
+      ];
+    case 'darwin':
+      return [
+        '/Users/Shared/Epic Games',
+        '/Applications/Epic Games',
+        '/Applications',
+      ];
+    case 'linux':
+      return [
+        '/home/UnrealEngine',
+        '/usr/local/UnrealEngine',
+      ];
+    default:
+      return [];
+  }
+}
+
 export async function scanEngines(): Promise<EngineInstallation[]> {
   const engines: EngineInstallation[] = [];
   const foundPaths = new Set<string>();
@@ -42,37 +84,30 @@ async function scanRegistry(engines: EngineInstallation[], foundPaths: Set<strin
 }
 
 async function scanCommonPaths(engines: EngineInstallation[], foundPaths: Set<string>) {
-  const drives = ['C:', 'D:', 'E:'];
-  const commonBases = [
-    'Program Files\\Epic Games',
-    'Epic Games',
-    'UnrealEngine',
-  ];
+  const commonPaths = getCommonEnginePaths();
 
-  for (const drive of drives) {
-    for (const base of commonBases) {
-      const searchPath = path.join(drive, base);
-      try {
-        const dirs = await fs.readdir(searchPath);
-        for (const dir of dirs) {
-          if (dir.startsWith('UE_') || dir.startsWith('UnrealEngine-')) {
-            const enginePath = path.join(searchPath, dir);
-            if (!foundPaths.has(enginePath) && await validateEngine(enginePath)) {
-              foundPaths.add(enginePath);
-              engines.push(await createEngineInfo(enginePath, 'launcher'));
-            }
+  for (const searchPath of commonPaths) {
+    try {
+      const dirs = await fs.readdir(searchPath);
+      for (const dir of dirs) {
+        if (dir.startsWith('UE_') || dir.startsWith('UnrealEngine-') || dir.includes('UE_')) {
+          const enginePath = path.join(searchPath, dir);
+          if (!foundPaths.has(enginePath) && await validateEngine(enginePath)) {
+            foundPaths.add(enginePath);
+            engines.push(await createEngineInfo(enginePath, 'launcher'));
           }
         }
-      } catch {
-        // Path doesn't exist, skip
       }
+    } catch {
+      // Path doesn't exist, skip
     }
   }
 }
 
 export async function validateEngine(enginePath: string): Promise<boolean> {
   try {
-    const runatPath = path.join(enginePath, 'Engine', 'Build', 'BatchFiles', 'RunUAT.bat');
+    const scriptName = getUATScriptName();
+    const runatPath = path.join(enginePath, 'Engine', 'Build', 'BatchFiles', scriptName);
     await fs.access(runatPath);
     return true;
   } catch {

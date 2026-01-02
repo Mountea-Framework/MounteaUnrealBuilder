@@ -2,6 +2,19 @@ import { spawn, ChildProcessWithoutNullStreams } from 'child_process';
 import * as path from 'path';
 import { ProjectConfig, EngineInstallation, BuildRecord } from '../shared/types';
 
+function getUATScriptName(): string {
+  switch (process.platform) {
+    case 'win32':
+      return 'RunUAT.bat';
+    case 'darwin':
+      return 'RunUAT.sh';
+    case 'linux':
+      return 'RunUAT.sh';
+    default:
+      return 'RunUAT.sh';
+  }
+}
+
 export class BuildExecutor {
   private currentProcess: ChildProcessWithoutNullStreams | null = null;
   private currentBuildId: string | null = null;
@@ -138,12 +151,13 @@ export class BuildExecutor {
     outPath: string
   ): Promise<boolean> {
     return new Promise((resolve) => {
+      const scriptName = getUATScriptName();
       const runatPath = path.join(
         engine.path,
         'Engine',
         'Build',
         'BatchFiles',
-        'RunUAT.bat'
+        scriptName
       );
 
       let args: string[];
@@ -175,7 +189,9 @@ export class BuildExecutor {
         ];
       }
 
-      this.currentProcess = spawn(`"${runatPath}"`, args, {
+      const spawnCommand = process.platform === 'win32' ? `"${runatPath}"` : runatPath;
+      
+      this.currentProcess = spawn(spawnCommand, args, {
         shell: true,
         cwd: engine.path,
         env: {
@@ -204,8 +220,8 @@ export class BuildExecutor {
         this.onLog(
           buildId,
           success
-            ? '✅ Build completed successfully!\n'
-            : `❌ Build failed with exit code ${code}\n`
+            ? '✓ Build completed successfully!\n'
+            : `✗ Build failed with exit code ${code}\n`
         );
 
         resolve(success);
