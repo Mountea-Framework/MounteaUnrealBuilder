@@ -493,6 +493,9 @@ Built with Unreal Engine developer workflows in mind. Special thanks to the Unre
 
 ### 1.0.2 (Current)
 - Mac paths fix
+
+### 1.0.2
+- Mac paths fix
 - Added support page
 
 ### 1.0.1

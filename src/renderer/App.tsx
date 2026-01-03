@@ -104,7 +104,7 @@ const App: React.FC = () => {
       <nav className="sidebar">
         <div className="sidebar-header">
           <h1>Unreal Builder</h1>
-          <span className="version">v1.0.2</span>
+          <span className="version">v1.0.3</span>
         </div>
         <ul className="nav-menu">
           <li

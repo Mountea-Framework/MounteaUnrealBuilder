@@ -189,7 +189,7 @@ export class BuildExecutor {
         ];
       }
 
-      const spawnCommand = process.platform === 'win32' ? `"${runatPath}"` : runatPath;
+      const spawnCommand = `'${runatPath}'`;
       
       this.currentProcess = spawn(spawnCommand, args, {
         shell: true,
