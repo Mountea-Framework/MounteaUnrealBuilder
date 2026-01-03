@@ -348,6 +348,11 @@ body {
   gap: 1rem;
 }
 
+.project-info {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .project-info h3 {
   font-size: 1.125rem;
   font-weight: 700;
@@ -355,6 +360,7 @@ body {
   color: var(--text-primary);
   text-transform: none;
   letter-spacing: normal;
+  text-overflow: ellipsis;
 }
 
 .project-badge {
