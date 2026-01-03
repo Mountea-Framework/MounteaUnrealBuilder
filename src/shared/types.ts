@@ -47,6 +47,12 @@ export interface BuildProfile {
   targetConfig?: 'Development' | 'Shipping';
   preBuildScript?: string;
   postBuildScript?: string;
+  customVariables?: ProfileVariable[];
+}
+
+export interface ProfileVariable {
+  name: string;
+  value: string;
 }
 
 export interface BuildAnalytics {

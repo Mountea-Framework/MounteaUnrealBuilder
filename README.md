@@ -491,7 +491,12 @@ Built with Unreal Engine developer workflows in mind. Special thanks to the Unre
 
 ## Version History
 
-### 1.0.2 (Current)
+### 1.0.4 (Current)
+- Win paths fix
+- Pre-operation/Post-operation script variables in Profiles
+- Fixed a few visual issues with clipping texts
+
+### 1.0.3
 - Mac paths fix
 
 ### 1.0.2

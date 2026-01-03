@@ -35,7 +35,11 @@ export class BuildExecutor {
       this.onLog(buildId, `[${scriptType.toUpperCase()}-BUILD SCRIPT] Running: ${scriptPath}\n`);
       
       const startTime = Date.now();
-      const scriptProcess = spawn(scriptPath, [], {
+      const quotedPath = process.platform === 'win32' 
+        ? `"${scriptPath}"` 
+        : `'${scriptPath}'`;
+      
+      const scriptProcess = spawn(quotedPath, [], {
         shell: true,
         env: { ...process.env, ...env },
         cwd: path.dirname(scriptPath),
@@ -85,7 +89,7 @@ export class BuildExecutor {
     const outPath = path.join(project.outputPath, project.name);
     const projectDir = path.dirname(project.pluginPath);
     
-    const scriptEnv = {
+    const scriptEnv: Record<string, string> = {
       PROJECT_NAME: project.name,
       PROJECT_PATH: project.pluginPath,
       PROJECT_DIR: projectDir,
@@ -96,6 +100,12 @@ export class BuildExecutor {
       BUILD_CONFIG: project.targetConfig || '',
       PROJECT_TYPE: project.projectType || 'plugin',
     };
+
+    if (profile?.customVariables) {
+      profile.customVariables.forEach((variable: { name: string; value: string }) => {
+        scriptEnv[variable.name] = variable.value;
+      });
+    }
 
     const preBuildScript = profile?.preBuildScript;
     const postBuildScript = profile?.postBuildScript;
@@ -189,7 +199,9 @@ export class BuildExecutor {
         ];
       }
 
-      const spawnCommand = `"${runatPath}"`;
+      const spawnCommand = process.platform === 'win32' 
+        ? `"${runatPath}"` 
+        : `'${runatPath}'`;
       
       this.currentProcess = spawn(spawnCommand, args, {
         shell: true,

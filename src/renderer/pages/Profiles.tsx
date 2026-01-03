@@ -17,6 +17,7 @@ const PLATFORMS = [
 const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [editingProfile, setEditingProfile] = useState<BuildProfile | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     profileType: 'plugin' as 'plugin' | 'project',
@@ -25,10 +26,12 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
     description: '',
     preBuildScript: '',
     postBuildScript: '',
+    customVariables: [] as { name: string; value: string }[],
   });
 
   const startAddProfile = () => {
     setEditingProfile(null);
+    setShowAdvanced(false);
     setFormData({
       name: '',
       profileType: 'plugin',
@@ -37,12 +40,15 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
       description: '',
       preBuildScript: '',
       postBuildScript: '',
+      customVariables: [],
     });
     setShowProfileForm(true);
   };
 
   const startEditProfile = (profile: BuildProfile) => {
     setEditingProfile(profile);
+    const hasAdvanced = !!(profile.preBuildScript || profile.postBuildScript || (profile.customVariables && profile.customVariables.length > 0));
+    setShowAdvanced(hasAdvanced);
     setFormData({
       name: profile.name,
       profileType: profile.profileType || 'plugin',
@@ -51,6 +57,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
       description: profile.description || '',
       preBuildScript: profile.preBuildScript || '',
       postBuildScript: profile.postBuildScript || '',
+      customVariables: profile.customVariables || [],
     });
     setShowProfileForm(true);
   };
@@ -90,11 +97,36 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
     }
   };
 
+  const handleAddVariable = () => {
+    setFormData(prev => ({
+      ...prev,
+      customVariables: [...prev.customVariables, { name: '', value: '' }],
+    }));
+  };
+
+  const handleUpdateVariable = (index: number, field: 'name' | 'value', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      customVariables: prev.customVariables.map((v, i) =>
+        i === index ? { ...v, [field]: value } : v
+      ),
+    }));
+  };
+
+  const handleDeleteVariable = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      customVariables: prev.customVariables.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSaveProfile = async () => {
     if (!formData.name.trim() || formData.platforms.length === 0) {
       alert('Please provide a name and select at least one platform');
       return;
     }
+
+    const validVariables = formData.customVariables.filter(v => v.name.trim() && v.value.trim());
 
     const profileData: BuildProfile = {
       id: editingProfile?.id || crypto.randomUUID(),
@@ -105,6 +137,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
       description: formData.description.trim() || undefined,
       preBuildScript: formData.preBuildScript || undefined,
       postBuildScript: formData.postBuildScript || undefined,
+      customVariables: validVariables.length > 0 ? validVariables : undefined,
     };
 
     const updatedProfiles = editingProfile
@@ -129,6 +162,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
       description: profile.description,
       preBuildScript: profile.preBuildScript,
       postBuildScript: profile.postBuildScript,
+      customVariables: profile.customVariables ? [...profile.customVariables] : undefined,
     };
 
     await saveConfig({
@@ -302,7 +336,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                 <div className="checkbox-group">
                   <label className="checkbox-label">
                     <input
-                      type="checkbox"
+                      type="radio"
                       name="profileType"
                       checked={formData.profileType === 'plugin'}
                       onChange={() => setFormData({ ...formData, profileType: 'plugin', platforms: formData.platforms.length === 1 ? ['Win64'] : formData.platforms })}
@@ -311,7 +345,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   </label>
                   <label className="checkbox-label">
                     <input
-                      type="checkbox"
+                      type="radio"
                       name="profileType"
                       checked={formData.profileType === 'project'}
                       onChange={() => setFormData({ ...formData, profileType: 'project', platforms: [formData.platforms[0] || 'Win64'] })}
@@ -343,7 +377,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   {PLATFORMS.map(platform => (
                     <label key={platform.id} className="checkbox-label">
                       <input
-                        type={'checkbox'}
+                        type={formData.profileType === 'project' ? 'radio' : 'checkbox'}
                         name={formData.profileType === 'project' ? 'platform' : undefined}
                         checked={formData.platforms.includes(platform.id)}
                         onChange={() => togglePlatform(platform.id)}
@@ -360,7 +394,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   <div className="checkbox-group">
                     <label className="checkbox-label">
                       <input
-                        type="checkbox"
+                        type="radio"
                         name="targetConfig"
                         checked={formData.targetConfig === 'Development'}
                         onChange={() => setFormData({ ...formData, targetConfig: 'Development' })}
@@ -369,7 +403,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                     </label>
                     <label className="checkbox-label">
                       <input
-                        type="checkbox"
+                        type="radio"
                         name="targetConfig"
                         checked={formData.targetConfig === 'Shipping'}
                         onChange={() => setFormData({ ...formData, targetConfig: 'Shipping' })}
@@ -421,6 +455,127 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   Runs after successful build. Use for packaging, archiving, etc.
                 </p>
               </div>
+
+              <div className="form-group" style={{ marginTop: '2rem' }}>
+                <div 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem', 
+                    cursor: 'pointer',
+                    userSelect: 'none'
+                  }}
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.25rem', transition: 'transform 0.2s', transform: showAdvanced ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                    chevron_right
+                  </span>
+                  <h4 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600 }}>
+                    Advanced Settings
+                  </h4>
+                </div>
+              </div>
+
+              {showAdvanced && (
+                <>
+                  <div className="form-group">
+                    <label>Built-in Variables</label>
+                    <div style={{ 
+                      background: 'var(--bg-secondary)', 
+                      border: '1px solid var(--border)', 
+                      borderRadius: 'var(--radius-md)', 
+                      padding: '1rem',
+                      fontSize: '0.8125rem',
+                      fontFamily: 'Consolas, monospace'
+                    }}>
+                      <p style={{ margin: '0 0 0.75rem 0', color: 'var(--text-secondary)', fontFamily: 'var(--font-family)' }}>
+                        These variables are automatically available in your scripts:
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <div style={{ color: 'var(--primary)' }}>PROJECT_NAME</div>
+                        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-family)' }}>Plugin/project name</div>
+                        
+                        <div style={{ color: 'var(--primary)' }}>ENGINE_PATH</div>
+                        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-family)' }}>Full engine path</div>
+                        
+                        <div style={{ color: 'var(--primary)' }}>ENGINE_VERSION</div>
+                        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-family)' }}>Engine version (e.g., 5.3)</div>
+                        
+                        <div style={{ color: 'var(--primary)' }}>OUTPUT_PATH</div>
+                        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-family)' }}>Build output directory</div>
+                        
+                        <div style={{ color: 'var(--primary)' }}>PROJECT_PATH</div>
+                        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-family)' }}>Full .uplugin/.uproject path</div>
+                        
+                        <div style={{ color: 'var(--primary)' }}>TARGET_PLATFORMS</div>
+                        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-family)' }}>Comma-separated platforms</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                      <label style={{ margin: 0 }}>Custom Variables</label>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary" 
+                        onClick={handleAddVariable}
+                        style={{ padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>add</span>
+                        Add Variable
+                      </button>
+                    </div>
+                    
+                    {formData.customVariables.length === 0 ? (
+                      <p className="help-text" style={{ marginTop: '0.5rem' }}>
+                        No custom variables defined. Click "Add Variable" to create your own.
+                      </p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {formData.customVariables.map((variable, index) => (
+                          <div 
+                            key={index} 
+                            style={{ 
+                              display: 'grid', 
+                              gridTemplateColumns: '1fr 1fr auto', 
+                              gap: '0.5rem',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="VARIABLE_NAME"
+                              value={variable.name}
+                              onChange={(e) => handleUpdateVariable(index, 'name', e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
+                              style={{ fontFamily: 'Consolas, monospace', fontSize: '0.8125rem' }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="value"
+                              value={variable.value}
+                              onChange={(e) => handleUpdateVariable(index, 'value', e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-text"
+                              onClick={() => handleDeleteVariable(index)}
+                              style={{ color: 'var(--danger)' }}
+                            >
+                              <span className="material-symbols-outlined">delete</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="help-text" style={{ marginTop: '0.75rem' }}>
+                      Define your own variables to use in scripts. Example: MY_PATH=/custom/path
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="form-footer">

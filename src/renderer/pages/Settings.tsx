@@ -287,7 +287,7 @@ const Settings: React.FC<Props> = ({ config, saveConfig }) => {
               </div>
               <div>
                 <h4 style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.25rem' }}>Unreal Builder</h4>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>v1.0.3</p>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>v1.0.4</p>
               </div>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.6', marginBottom: '0.75rem' }}>

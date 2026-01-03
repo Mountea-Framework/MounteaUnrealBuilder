@@ -108,7 +108,7 @@ const Support: React.FC = () => {
           <div style={{ marginTop: '1rem' }}>
             <div className="project-detail" style={{ marginBottom: '0.5rem' }}>
               <span className="material-symbols-outlined">info</span>
-              <span>Version 1.0.3</span>
+              <span>Version 1.0.4</span>
             </div>
             <div className="project-detail">
               <span className="material-symbols-outlined">code</span>
