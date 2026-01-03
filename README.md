@@ -198,6 +198,30 @@ To use a profile:
 3. Click "Build"
 4. Project builds with profile's platform settings
 
+## About
+
+### Support
+
+![Support](docs/screenshots/support.png)
+
+Support page contains useful links which might help you if you are stuck or
+if you want to financially support Mountea Framework.
+
+**Discord Community:**
+- Official Discord server to raise support tickets or discuss anything gamedev related
+
+**Mountea Tools:**
+- Mountea website where you can see list of our tools, some you might find useful
+
+**Source Code:**
+- Public GitHub repository containing the full source, we have nothing to hide!
+
+**Patreon:**
+- If you are feeling generous we would happily appreciate any financial support!
+
+** GitHub Sponsors:**
+- If you are feeling generous we would happily appreciate any financial support!
+
 ## Configuration
 
 ### Settings
@@ -467,7 +491,15 @@ Built with Unreal Engine developer workflows in mind. Special thanks to the Unre
 
 ## Version History
 
-### 1.0.0 (Current)
+### 1.0.2 (Current)
+- Mac paths fix
+- Added support page
+
+### 1.0.1
+- Pre-operation script selector
+- Post-operation script selector
+
+### 1.0.0
 - Initial release
 - Plugin build support
 - Project build support
