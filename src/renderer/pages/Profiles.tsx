@@ -336,7 +336,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                 <div className="checkbox-group">
                   <label className="checkbox-label">
                     <input
-                      type="radio"
+                      type="checkbox"
                       name="profileType"
                       checked={formData.profileType === 'plugin'}
                       onChange={() => setFormData({ ...formData, profileType: 'plugin', platforms: formData.platforms.length === 1 ? ['Win64'] : formData.platforms })}
@@ -345,7 +345,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   </label>
                   <label className="checkbox-label">
                     <input
-                      type="radio"
+                      type="checkbox"
                       name="profileType"
                       checked={formData.profileType === 'project'}
                       onChange={() => setFormData({ ...formData, profileType: 'project', platforms: [formData.platforms[0] || 'Win64'] })}
@@ -377,7 +377,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   {PLATFORMS.map(platform => (
                     <label key={platform.id} className="checkbox-label">
                       <input
-                        type={formData.profileType === 'project' ? 'radio' : 'checkbox'}
+                        type={'checkbox'}
                         name={formData.profileType === 'project' ? 'platform' : undefined}
                         checked={formData.platforms.includes(platform.id)}
                         onChange={() => togglePlatform(platform.id)}
@@ -394,7 +394,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                   <div className="checkbox-group">
                     <label className="checkbox-label">
                       <input
-                        type="radio"
+                        type="checkbox"
                         name="targetConfig"
                         checked={formData.targetConfig === 'Development'}
                         onChange={() => setFormData({ ...formData, targetConfig: 'Development' })}
@@ -403,7 +403,7 @@ const Profiles: React.FC<Props> = ({ config, saveConfig }) => {
                     </label>
                     <label className="checkbox-label">
                       <input
-                        type="radio"
+                        type="checkbox"
                         name="targetConfig"
                         checked={formData.targetConfig === 'Shipping'}
                         onChange={() => setFormData({ ...formData, targetConfig: 'Shipping' })}
