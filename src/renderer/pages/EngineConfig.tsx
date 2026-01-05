@@ -193,7 +193,7 @@ const EngineConfig: React.FC<Props> = ({ config, saveConfig }) => {
                   </button>
                 </div>
                 <p className="help-text">
-                  Select the root folder containing Engine/Build/BatchFiles/RunUAT.bat
+                  Select the root folder containing Engine/Build/BatchFiles/RunUAT scripts
                 </p>
               </div>
             </div>
