@@ -518,3 +518,13 @@
 > - System tray integration
 > - Real-time build logs
 > - Cross-platform support (Windows, macOS, Linux)
+
+## Star history
+
+<a href="https://www.star-history.com/#Mountea-Framework/MounteaUnrealBuilder&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Mountea-Framework/MounteaUnrealBuilder&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Mountea-Framework/MounteaUnrealBuilder&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Mountea-Framework/MounteaUnrealBuilder&type=date&legend=top-left" />
+ </picture>
+</a>
