@@ -483,7 +483,7 @@
 
 ## License
 
-> This project is licensed under the GPL-2.0 license. See LICENSE file for details.
+> This project is licensed under the GPL-2.0 license. See [LICENCE](https://github.com/Mountea-Framework/MounteaUnrealBuilder/blob/master/LICENSE) file for details.
 
 ## Acknowledgments
 
